@@ -49,3 +49,5 @@ class Fraction {
         return new Fraction(-fraction.numerator, fraction.denominator);
     }
 }
+
+export default Fraction;
