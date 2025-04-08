@@ -1,19 +1,19 @@
-function gcd(a: number, b: number): number {
-    while (b)
-    	[a, b] = [b, a % b];
-    return a;
-}
-
-function lcm(a: number, b: number): number {
-    return (a * b) / gcd(a, b);
-}
-
 class Fraction {
     numerator: number;
     denominator: number;
 
+    static function gcd(a: number, b: number): number {
+        while (b)
+    	    [a, b] = [b, a % b];
+        return a;
+    }
+
+    static function lcm(a: number, b: number): number {
+        return (a * b) / Fraction.gcd(a, b);
+    }
+
     simplify(): void {
-        const commonDivisor: number = gcd(this.numerator, this.denominator);
+        const commonDivisor: number = Fraction.gcd(this.numerator, this.denominator);
         this.numerator /= commonDivisor;
         this.denominator /= commonDivisor;
     }
@@ -29,7 +29,7 @@ class Fraction {
     }
 
     add(other: Fraction): void {
-        const commonMultiple: number = lcm(this.numerator, this.denominator);
+        const commonMultiple: number = Fraction.lcm(this.numerator, this.denominator);
         this.numerator = (this.numerator * (commonMultiple / this.denominator)) + (other.numerator * (commonMultiple / other.denominator));
         this.denominator = commonMultiple;
         this.simplify();
