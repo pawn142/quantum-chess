@@ -2,13 +2,13 @@ class Fraction {
     numerator: number;
     denominator: number;
 
-    static function gcd(a: number, b: number): number {
+    static gcd(a: number, b: number): number {
         while (b)
     	    [a, b] = [b, a % b];
         return a;
     }
 
-    static function lcm(a: number, b: number): number {
+    static lcm(a: number, b: number): number {
         return (a * b) / Fraction.gcd(a, b);
     }
 
