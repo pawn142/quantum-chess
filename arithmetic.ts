@@ -13,7 +13,7 @@ class Fraction {
     denominator: number;
 
     simplify(): void {
-        const commonDivisor = gcd(this.numerator, this.denominator);
+        const commonDivisor: number = gcd(this.numerator, this.denominator);
         this.numerator /= commonDivisor;
         this.denominator /= commonDivisor;
     }
@@ -29,7 +29,7 @@ class Fraction {
     }
 
     add(other: Fraction): void {
-        const commonMultiple = lcm(this.numerator, this.denominator);
+        const commonMultiple: number = lcm(this.numerator, this.denominator);
         this.numerator = (this.numerator * (commonMultiple / this.denominator)) + (other.numerator * (commonMultiple / other.denominator));
         this.denominator = commonMultiple;
         this.simplify();
