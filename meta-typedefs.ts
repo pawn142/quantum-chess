@@ -1,9 +1,9 @@
 import Fraction from './arithmetic.ts';
 import { Side } from './piecetypes.ts';
 
-type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-
 const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface Coord {
     x: PartialCoord;
@@ -234,5 +234,18 @@ function getPositionString(data: GamePosition): string {
 }
 
 export {
-    coord,
-}
+    boardFiles,
+    PartialCoord,
+    Coord,
+    WeightedCoord,
+    coordSerialize,
+    chessboard,
+    PieceEntanglement,
+    PieceSet,
+    HalfPosition,
+    CompletedHalfPosition,
+    GamePosition,
+    CompletedPosition,
+    defaultPosition,
+    getPositionString,
+};
