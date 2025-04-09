@@ -1,28 +1,5 @@
 import Fraction from './arithmetic.ts';
 
-enum Piece {
-    pawn,
-    knight,
-    bishop,
-    rook,
-    queen,
-    king,
-}
-
-enum Side {
-    white,
-    black,
-}
-
-interface ColoredPiece {
-    piece: Piece;
-    side: Side;
-}
-
-interface IndexedPiece extends ColoredPiece {
-    index: number;
-}
-
 type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface Coord {
@@ -52,7 +29,7 @@ type PieceSet = {
     pieceEntanglements: PieceEntanglement[];
 };
 
-interface HalfPosition = {
+interface HalfPosition {
     p1?: PieceSet;
     p2?: PieceSet;
     p3?: PieceSet;
@@ -71,7 +48,7 @@ interface HalfPosition = {
     r2?: PieceSet;
 }
 
-interface GamePosition = {
+interface GamePosition {
     whitePosition: HalfPosition;
     blackPosition: HalfPosition;
     whoseTurn: Side;
@@ -86,13 +63,14 @@ function getPositionString(data: GamePosition): string {
     let positionString: string = "";
     Object.entries(data.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
         if (whitePiece) {
-            let piecesString: string = "";
-            positionString += `${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}(${whitePiece}`
+            let whitePieceString: string = "";
+            positionString += `${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}: ${whitePieceString}|`;
         }
     });
     Object.entries(data.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
         if (blackPiece) {
-            positionString += `${blackPieceKey}(${blackPiece}`
+            let blackPieceString: string = "";
+            positionString += `${blackPieceKey}: ${blackPieceString}|`;
         }
     });
 }
