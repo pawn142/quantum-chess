@@ -232,3 +232,7 @@ function getPositionString(data: GamePosition): string {
     });
     return positionString;
 }
+
+export {
+    coord,
+}
