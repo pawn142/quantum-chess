@@ -238,7 +238,7 @@ export {
     PartialCoord,
     Coord,
     WeightedCoord,
-    coordSerialize,
+    coordserialize,
     chessboard,
     PieceEntanglement,
     PieceSet,
