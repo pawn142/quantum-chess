@@ -91,7 +91,7 @@ class PieceEntanglement {
     constructor(fromCandidate: number, toCandidate: number, positionList: Coord[] | WeightedCoord[] = chessboard) {
         if (!Number.isInteger(fromCandidate) || !Number.isInteger(toCandidate))
             throw new Error("Tried to initialize PieceEntanglement with a non-integer from index or to index");
-        if (!(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length)) {
+        if (!(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length))
             throw new Error("Tried to initialize PieceEntanglement with a from index or to index that is out of bounds");
         this.from = fromCandidate;
         this.to = toCandidate;
@@ -132,12 +132,12 @@ interface CompletedHalfPosition {
     p7?: Coord;
     p8?: Coord;
     r1?: Coord;
-    k1?: Coord;
+    n1?: Coord;
     b1?: Coord;
     q?:  Coord;
     k?:  Coord;
     b2?: Coord;
-    k2?: Coord;
+    n2?: Coord;
     r2?: Coord;
 }
 
@@ -174,12 +174,12 @@ const defaultPosition: CompletedPosition = {
         p7: {x: 7, y: 2},
         p8: {x: 8, y: 2},
         r1: {x: 1, y: 1},
-        k1: {x: 2, y: 1},
+        n1: {x: 2, y: 1},
         b1: {x: 3, y: 1},
         q:  {x: 4, y: 1},
         k:  {x: 5, y: 1},
         b2: {x: 6, y: 1},
-        k2: {x: 7, y: 1},
+        n2: {x: 7, y: 1},
         r2: {x: 8, y: 1},
     },
     blackPosition: {
@@ -192,12 +192,12 @@ const defaultPosition: CompletedPosition = {
         p7: {x: 7, y: 7},
         p8: {x: 8, y: 7},
         r1: {x: 1, y: 8},
-        k1: {x: 2, y: 8},
+        n1: {x: 2, y: 8},
         b1: {x: 3, y: 8},
         q:  {x: 4, y: 8},
         k:  {x: 5, y: 8},
         b2: {x: 6, y: 8},
-        k2: {x: 7, y: 8},
+        n2: {x: 7, y: 8},
         r2: {x: 8, y: 8},
     },
     whoseTurn: Side.white,
@@ -215,7 +215,7 @@ function getPositionString(data: GamePosition): string {
             let whitePieceString: string = "";
             for (let whiteCoordinate of whitePiece.positions)
                 whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
-            for (let whiteEntanglement of whitePiece.entanglements)
+            for (let whiteEntanglement of whitePiece.pieceEntanglements)
                 whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
             positionString += `${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}|`;
         }
@@ -224,8 +224,8 @@ function getPositionString(data: GamePosition): string {
         if (blackPiece) {
             let blackPieceString: string = "";
             for (let blackCoordinate of blackPiece.positions)
-                blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize(}),`;
-            for (let blackEntanglement of blackPiece.entanglements)
+                blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()},`;
+            for (let blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
             positionString += `${blackPieceKey}: ${blackPieceString}|`;
         }
