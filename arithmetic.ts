@@ -48,6 +48,10 @@ class Fraction {
     static negative(fraction: Fraction): Fraction {
         return new Fraction(-fraction.numerator, fraction.denominator);
     }
+
+    serialize(): string {
+        return `(${this.numerator}/${this.denominator})`;
+    }
 }
 
 export default Fraction;
