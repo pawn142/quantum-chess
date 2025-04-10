@@ -208,9 +208,9 @@ const defaultPosition: CompletedPosition = {
     enPassant: false,
 };
 
-function getPositionString(data: GamePosition): string {
-    let positionString: string = `[turn: ${data.whoseTurn}, castling: white ${data.castling.canWhiteCastle.toString()} black ${data.castling.canBlackCastle.toString()}, enpassant: ${data.enPassant ? coordserialize(data.enPassant) : "false"}] `;
-    Object.entries(data.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
+function getPositionString(gamePosition: GamePosition): string {
+    let positionString: string = `[turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enPassant ? coordserialize(gamePosition.enPassant) : "false"}] `;
+    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
         if (whitePiece) {
             let whitePieceString: string = "";
             for (let whiteCoordinate of whitePiece.positions)
@@ -220,7 +220,7 @@ function getPositionString(data: GamePosition): string {
             positionString += `${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}|`;
         }
     });
-    Object.entries(data.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
+    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
         if (blackPiece) {
             let blackPieceString: string = "";
             for (let blackCoordinate of blackPiece.positions)
