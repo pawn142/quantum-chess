@@ -227,7 +227,7 @@ function getPositionString(data: GamePosition): string {
                 blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
             for (let blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
-            positionString += `${blackPieceKey}: ${blackPieceString.slice(0, -1)}|`;
+            positionString += `${blackPieceKey}:${blackPieceString.slice(0, -1)}|`;
         }
     });
     return positionString.slice(0, -1);
