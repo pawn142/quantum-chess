@@ -14,7 +14,7 @@
         "strict": true,
         "noEmitOnError": true,
         "incremental": true,
-        "tsBuildInfoFile": "./dist/.tsbuildinfo",
+        "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     },
-    "include": []
+    "include": [ "dist/**/*" ]
 }
