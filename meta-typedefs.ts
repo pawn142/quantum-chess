@@ -210,49 +210,43 @@ const defaultPosition: CompletedPosition = {
 
 function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
     return {
-        whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceKey, whitePiecePosition]) => [
+        whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceKey, whitePieceCoord]) => ([
             whitePieceKey,
-            Object.fromEntries(Object.entries(whitePiecePosition).map(([whiteCoordinateKey, whiteCoordinate]) => ({
-                ...whiteCoordinate,
-                probability: new Fraction(1, 1),
-            }))),
-        ])),
-        blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceKey, blackPiecePosition]) => [
+            Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]]),
+        ]))),
+        blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceKey, blackPieceCoord]) => ([
             blackPieceKey,
-            Object.fromEntries(Object.entries(whitePiecePosition).map((blackCoordinate: Coord) => ({
-                ...blackCoordinate,
-                probability: new Fraction(1, 1)
-            }))),
-        ])),
+            Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]]),
+        ]))),
         whoseTurn: (completedPosition.whoseTurn ?? defaultPosition.whoseTurn)!,
         castling: (completedPosition.castling ?? defaultPosition.castling)!,
-        enPassant: (completedPosition.enPassant ?? defaultPosition.enPassant)!,
+        enpassant: (completedPosition.enpassant ?? defaultPosition.enpassant)!,
     };
 }
 
 function getPositionString(gamePosition: GamePosition): string {
-    let positionString: string = `[turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enPassant ? coordserialize(gamePosition.enPassant) : "false"}] `;
-    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
+    let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
+    Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]) => {
         if (whitePiece) {
             let whitePieceString: string = "";
             for (let whiteCoordinate of whitePiece.positions)
                 whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
             for (let whiteEntanglement of whitePiece.pieceEntanglements)
                 whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
-            positionString += `${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}|`;
+            positionString += `|${whiteKey[0].toUpperCase() + whiteKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
         }
     });
-    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
+    Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]) => {
         if (blackPiece) {
             let blackPieceString: string = "";
             for (let blackCoordinate of blackPiece.positions)
                 blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
             for (let blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
-            positionString += `${blackPieceKey}:${blackPieceString.slice(0, -1)}|`;
+            positionString += `|${blackKey}:${blackPieceString.slice(0, -1)}`;
         }
     });
-    return positionString.slice(0, -1);
+    return positionString;
 }
 
 export {
