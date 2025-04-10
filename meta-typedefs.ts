@@ -208,6 +208,16 @@ const defaultPosition: CompletedPosition = {
     enPassant: false,
 };
 
+function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
+    return {
+        whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceKey, whitePiecePosition]) => [whitePieceKey, whitePiecePosition.map((whiteCoordinate) => {...whiteCoordinate, new Fraction(1, 1)})])),
+        blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceKey, blackPiecePosition]) => [blackPieceKey, blackPiecePosition.map((blackCoordinate) => {...blackCoordinate, new Fraction(1, 1)})])),
+        whoseTurn: completedPosition.whoseTurn ?? defaultPosition.whoseTurn,
+        castling: completedPosition.castling ?? defaultPosition.castling,
+        enPassant: completedPosition.enPassant ?? defaultPosition.enPassant,
+    }
+}
+
 function getPositionString(gamePosition: GamePosition): string {
     let positionString: string = `[turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enPassant ? coordserialize(gamePosition.enPassant) : "false"}] `;
     Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
@@ -247,5 +257,6 @@ export {
     GamePosition,
     CompletedPosition,
     defaultPosition,
+    completedPositionToPosition,
     getPositionString,
 };
