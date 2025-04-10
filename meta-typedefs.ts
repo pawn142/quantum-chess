@@ -98,7 +98,7 @@ class PieceEntanglement {
     }
 }
 
-type PieceSet = {
+interface PieceSet {
     positions: WeightedCoord[];
     pieceEntanglements: PieceEntanglement[];
 };
@@ -224,13 +224,13 @@ function getPositionString(data: GamePosition): string {
         if (blackPiece) {
             let blackPieceString: string = "";
             for (let blackCoordinate of blackPiece.positions)
-                blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()},`;
+                blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
             for (let blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
-            positionString += `${blackPieceKey}: ${blackPieceString}|`;
+            positionString += `${blackPieceKey}: ${blackPieceString.slice(0, -1)}|`;
         }
     });
-    return positionString;
+    return positionString.slice(0, -1);
 }
 
 export {
