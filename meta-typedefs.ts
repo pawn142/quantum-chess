@@ -226,24 +226,24 @@ function completedPositionToPosition(completedPosition: CompletedPosition): Game
 
 function getPositionString(gamePosition: GamePosition): string {
     let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
-    Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]) => {
+    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
         if (whitePiece) {
             let whitePieceString: string = "";
             for (let whiteCoordinate of whitePiece.positions)
                 whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
             for (let whiteEntanglement of whitePiece.pieceEntanglements)
                 whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
-            positionString += `|${whiteKey[0].toUpperCase() + whiteKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
+            positionString += `|${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
         }
     });
-    Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]) => {
+    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
         if (blackPiece) {
             let blackPieceString: string = "";
             for (let blackCoordinate of blackPiece.positions)
                 blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
             for (let blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
-            positionString += `|${blackKey}:${blackPieceString.slice(0, -1)}`;
+            positionString += `|${blackPieceKey}:${blackPieceString.slice(0, -1)}`;
         }
     });
     return positionString;
