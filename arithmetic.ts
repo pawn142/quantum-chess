@@ -21,8 +21,8 @@ class Fraction {
     constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
         if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate))
             throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
-        if (denominatorCandidate === 0)
-            throw new Error("Tried to construct Fraction with a denominator of zero");
+        if (!denominatorCandidate || !numeratorCandidate)
+            throw new Error("Tried to construct invalid Fraction");
         this.numerator = numeratorCandidate;
         this.denominator = denominatorCandidate;
         this.simplify();
