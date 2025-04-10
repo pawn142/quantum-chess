@@ -149,7 +149,7 @@ interface GamePosition {
         canWhiteCastle: boolean;
         canBlackCastle: boolean;
     };
-    enPassant: Coord | false;
+    enpassant: Coord | false;
 }
 
 interface CompletedPosition {
@@ -160,7 +160,7 @@ interface CompletedPosition {
         canWhiteCastle: boolean;
         canBlackCastle: boolean;
     };
-    enPassant?: Coord | false;
+    enpassant?: Coord | false;
 }
 
 const defaultPosition: CompletedPosition = {
@@ -205,7 +205,7 @@ const defaultPosition: CompletedPosition = {
         canWhiteCastle: true,
         canBlackCastle: true,
     },
-    enPassant: false,
+    enpassant: false,
 };
 
 function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
