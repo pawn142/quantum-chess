@@ -50,7 +50,7 @@ class Fraction {
     }
 
     serialize(): string {
-        return `(${this.numerator}/${this.denominator})`;
+        return `${this.numerator}/${this.denominator}`;
     }
 }
 
