@@ -28,4 +28,4 @@ export {
     Side,
     ColoredPiece,
     IndexedPiece,
-}
+};
