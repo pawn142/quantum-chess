@@ -13,7 +13,7 @@
         "noUncheckedIndexedAccess": true,
         "strict": true,
         "noEmitOnError": true,
-    "incremental": true,
+        "incremental": true,
         "tsBuildInfoFile": "./dist/.tsbuildinfo",
     },
     "include": []
