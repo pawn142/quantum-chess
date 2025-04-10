@@ -210,13 +210,13 @@ const defaultPosition: CompletedPosition = {
 
 function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
     return {
-        whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceKey, whitePieceCoord]) => ([
-            whitePieceKey,
-            Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]]),
+        whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceCoordKey, whitePieceCoord]: [string, Coord]) => ([
+            whitePieceCoordKey,
+            {positions: [Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]])], pieceEntanglements: []},
         ]))),
-        blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceKey, blackPieceCoord]) => ([
-            blackPieceKey,
-            Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]]),
+        blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceCoordKey, blackPieceCoord]: [string, Coord]) => ([
+            blackPieceCoordKey,
+            {positions: [Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]])], pieceEntanglements: []},
         ]))),
         whoseTurn: (completedPosition.whoseTurn ?? defaultPosition.whoseTurn)!,
         castling: (completedPosition.castling ?? defaultPosition.castling)!,
