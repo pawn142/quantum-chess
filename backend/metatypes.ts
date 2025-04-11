@@ -212,11 +212,17 @@ function completedPositionToPosition(completedPosition: CompletedPosition): Game
     return {
         whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceCoordKey, whitePieceCoord]: [string, Coord]) => ([
             whitePieceCoordKey,
-            {positions: [Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]])], pieceEntanglements: []},
+            {
+                positions: [Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]])],
+                pieceEntanglements: [],
+            },
         ]))),
         blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceCoordKey, blackPieceCoord]: [string, Coord]) => ([
             blackPieceCoordKey,
-            {positions: [Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]])], pieceEntanglements: []},
+            {
+                positions: [Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]])],
+                pieceEntanglements: [],
+            },
         ]))),
         whoseTurn: (completedPosition.whoseTurn ?? defaultPosition.whoseTurn)!,
         castling: (completedPosition.castling ?? defaultPosition.castling)!,
@@ -226,22 +232,22 @@ function completedPositionToPosition(completedPosition: CompletedPosition): Game
 
 function getPositionString(gamePosition: GamePosition): string {
     let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
-    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]) => {
+    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]: [string, PieceSet]) => {
         if (whitePiece) {
             let whitePieceString: string = "";
-            for (let whiteCoordinate of whitePiece.positions)
+            for (const whiteCoordinate of whitePiece.positions)
                 whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
-            for (let whiteEntanglement of whitePiece.pieceEntanglements)
+            for (const whiteEntanglement of whitePiece.pieceEntanglements)
                 whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
             positionString += `|${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
         }
     });
-    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]) => {
+    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]: [string, PieceSet]) => {
         if (blackPiece) {
             let blackPieceString: string = "";
-            for (let blackCoordinate of blackPiece.positions)
+            for (const blackCoordinate of blackPiece.positions)
                 blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
-            for (let blackEntanglement of blackPiece.pieceEntanglements)
+            for (const blackEntanglement of blackPiece.pieceEntanglements)
                 blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
             positionString += `|${blackPieceKey}:${blackPieceString.slice(0, -1)}`;
         }
