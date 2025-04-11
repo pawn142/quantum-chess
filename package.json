@@ -1,0 +1,25 @@
+{
+	"name": "quantum-chess-server",
+	"version": "0.0.0",
+	"description": "quantum chess server",
+	"author": "inaccessibles",
+	"license": "AGPL",
+	"main": "server.ts",
+	"type": "module",
+	"dependencies": {
+		"nodemon": "^3.1.9",
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.24.0",
+		"eslint": "^9.24.0",
+		"globals": "^16.0.0",
+    "typescript": "^5.8.3",
+		"typescript-eslint": "^8.29.1"
+	},
+	"scripts": {
+		"build": "node build.ts",
+		"watch": "nodemon",
+		"start": "node .",
+		"build-images": "node images.ts",
+	}
+}
