@@ -2,6 +2,6 @@
     "ignore": [
         "./dist/**/*",
     ],
-    "exec": "",
+    "exec": "npm run build && npm run start",
     "ext": "js,ts,html,css,json,png,webm",
 }
