@@ -19,10 +19,10 @@ class Fraction {
     }
 
     constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
+        if (!denominatorCandidate || !numeratorCandidate)
+            throw new Error("Tried to construct Fraction with a numerator or denominator of 0 or NaN");
         if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate))
             throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
-        if (!denominatorCandidate || !numeratorCandidate)
-            throw new Error("Tried to construct Fraction with a numerator or denominator of 0 or undefined");
         this.numerator = numeratorCandidate;
         this.denominator = denominatorCandidate;
         this.simplify();
