@@ -115,12 +115,12 @@ export interface HalfPosition {
     p7?: PieceSet;
     p8?: PieceSet;
     r1?: PieceSet;
-    k1?: PieceSet;
+    n1?: PieceSet;
     b1?: PieceSet;
-    q?:  PieceSet;
-    k?:  PieceSet;
+    q1?: PieceSet;
+    k1?: PieceSet;
     b2?: PieceSet;
-    k2?: PieceSet;
+    n2?: PieceSet;
     r2?: PieceSet;
 }
 
@@ -136,8 +136,8 @@ export interface CompletedHalfPosition {
     r1?: Coord;
     n1?: Coord;
     b1?: Coord;
-    q?:  Coord;
-    k?:  Coord;
+    q1?: Coord;
+    k1?: Coord;
     b2?: Coord;
     n2?: Coord;
     r2?: Coord;
@@ -178,8 +178,8 @@ export const defaultPosition: CompletedPosition = {
         r1: {x: 1, y: 1},
         n1: {x: 2, y: 1},
         b1: {x: 3, y: 1},
-        q:  {x: 4, y: 1},
-        k:  {x: 5, y: 1},
+        q1: {x: 4, y: 1},
+        k1: {x: 5, y: 1},
         b2: {x: 6, y: 1},
         n2: {x: 7, y: 1},
         r2: {x: 8, y: 1},
@@ -196,8 +196,8 @@ export const defaultPosition: CompletedPosition = {
         r1: {x: 1, y: 8},
         n1: {x: 2, y: 8},
         b1: {x: 3, y: 8},
-        q:  {x: 4, y: 8},
-        k:  {x: 5, y: 8},
+        q1: {x: 4, y: 8},
+        k1: {x: 5, y: 8},
         b2: {x: 6, y: 8},
         n2: {x: 7, y: 8},
         r2: {x: 8, y: 8},
