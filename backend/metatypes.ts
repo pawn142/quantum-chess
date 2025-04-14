@@ -1,5 +1,5 @@
 import Fraction from './arithmetic.ts';
-import { Side } from './piecetypes.ts';
+import { Piece, Side } from './piecetypes.ts';
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -8,6 +8,7 @@ export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export interface Coord {
     x: PartialCoord;
     y: PartialCoord;
+    promotion?: Piece;
 }
 
 export interface WeightedCoord extends Coord {
@@ -237,7 +238,7 @@ export function getPositionString(gamePosition: GamePosition): string {
     Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
         let whitePieceString: string = "";
         for (let whiteCoordinate of whitePiece.positions) {
-            whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
+            whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize() + (whiteCoordinate.promotion ? "," + whiteCoordinate.promotion : "")}),`;
         }
         for (let whiteEntanglement of whitePiece.pieceEntanglements) {
             whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
@@ -247,7 +248,7 @@ export function getPositionString(gamePosition: GamePosition): string {
     Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
         let blackPieceString: string = "";
         for (let blackCoordinate of blackPiece.positions) {
-            blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
+            blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize() + (blackCoordinate.promotion ? "," + blackCoordinate.promotion : "")}),`;
         }
         for (let blackEntanglement of blackPiece.pieceEntanglements) {
             blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
@@ -270,7 +271,8 @@ export function getPositionFromString(positionString: string): GamePosition {
                 positionArray.push({
                     x: boardFiles.indexOf(segment[1]!) + 1 as PartialCoord,
                     y: parseInt(segment[2]!) as PartialCoord,
-                    probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split("/")[1]!.slice(0, -1))),
+                    promotion: Piece[segment.split(",")[2]?.slice(0, -1) as keyof typeof Piece],
+                    probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
                 });
             } else {
                 entanglementArray.push(new PieceEntanglement(parseInt(segment[1]!), parseInt(segment[3]!)));
