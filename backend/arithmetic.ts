@@ -3,8 +3,9 @@ class Fraction {
     denominator: number;
 
     static gcd(a: number, b: number): number {
-        while (b)
+        while (b) {
     	    [a, b] = [b, a % b];
+        }
         return a;
     }
 
@@ -19,10 +20,12 @@ class Fraction {
     }
 
     constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
-        if (!denominatorCandidate || !numeratorCandidate)
+        if (!denominatorCandidate || !numeratorCandidate) {
             throw new Error("Tried to construct Fraction with a numerator or denominator of 0 or NaN");
-        if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate))
+        }
+        if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate)) {
             throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
+        }
         this.numerator = numeratorCandidate;
         this.denominator = denominatorCandidate;
         this.simplify();

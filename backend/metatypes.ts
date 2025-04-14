@@ -89,10 +89,12 @@ class PieceEntanglement {
     from: number;
     to: number;
     constructor(fromCandidate: number, toCandidate: number, positionList: Coord[] | WeightedCoord[] = chessboard) {
-        if (!Number.isInteger(fromCandidate) || !Number.isInteger(toCandidate))
+        if (!Number.isInteger(fromCandidate) || !Number.isInteger(toCandidate)) {
             throw new Error("Tried to initialize PieceEntanglement with a non-integer from index or to index");
-        if (!(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length))
+        }
+        if (!(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length)) {
             throw new Error("Tried to initialize PieceEntanglement with a from index or to index that is out of bounds");
+        }
         this.from = fromCandidate;
         this.to = toCandidate;
     }
@@ -232,27 +234,66 @@ function completedPositionToPosition(completedPosition: CompletedPosition): Game
 
 function getPositionString(gamePosition: GamePosition): string {
     let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
-    Object.entries(gamePosition.whitePosition).forEach(([whitePieceKey, whitePiece]: [string, PieceSet]) => {
-        if (whitePiece) {
-            let whitePieceString: string = "";
-            for (const whiteCoordinate of whitePiece.positions)
-                whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
-            for (const whiteEntanglement of whitePiece.pieceEntanglements)
-                whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
-            positionString += `|${whitePieceKey[0].toUpperCase() + whitePieceKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
+    Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
+        let whitePieceString: string = "";
+        for (let whiteCoordinate of whitePiece.positions) {
+            whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize()}),`;
         }
+        for (let whiteEntanglement of whitePiece.pieceEntanglements) {
+            whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
+        }
+        positionString += `|${whiteKey[0]!.toUpperCase() + whiteKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
     });
-    Object.entries(gamePosition.blackPosition).forEach(([blackPieceKey, blackPiece]: [string, PieceSet]) => {
-        if (blackPiece) {
-            let blackPieceString: string = "";
-            for (const blackCoordinate of blackPiece.positions)
-                blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
-            for (const blackEntanglement of blackPiece.pieceEntanglements)
-                blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
-            positionString += `|${blackPieceKey}:${blackPieceString.slice(0, -1)}`;
+    Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
+        let blackPieceString: string = "";
+        for (let blackCoordinate of blackPiece.positions) {
+            blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize()}),`;
         }
+        for (let blackEntanglement of blackPiece.pieceEntanglements) {
+            blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
+        }
+        positionString += `|${blackKey}:${blackPieceString.slice(0, -1)}`;
     });
     return positionString;
+}
+
+function getPositionFromString(positionString: string): GamePosition {
+    const components: string[] = positionString.split("|");
+    const metadata: string[] = components[0]!.split(" ");
+    let whitePositionArray: [string, PieceSet][] = [];
+    let blackPositionArray: [string, PieceSet][] = [];
+    for (const pieceString of components.slice(1)) {
+        let positionArray: WeightedCoord[] = [];
+        let entanglementArray: PieceEntanglement[] = [];
+        for (const segment of pieceString.split(" ").slice(1)) {
+            if (segment[0] === "(") {
+                positionArray.push({
+                    x: boardFiles.indexOf(segment[1]!) + 1 as PartialCoord,
+                    y: parseInt(segment[2]!) as PartialCoord,
+                    probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split("/")[1]!.slice(0, -1))),
+                });
+            } else {
+                entanglementArray.push(new PieceEntanglement(parseInt(segment[1]!), parseInt(segment[3]!)));
+            }
+        }
+        (pieceString[0] === pieceString[0]!.toLowerCase() ? blackPositionArray : whitePositionArray).push([pieceString.slice(0, 2).toLowerCase(), {
+            positions: positionArray,
+            pieceEntanglements: entanglementArray,
+        }]);
+    }
+    return {
+        whitePosition: Object.fromEntries(whitePositionArray),
+        blackPosition: Object.fromEntries(blackPositionArray),
+        whoseTurn: Side[metadata[1]!.slice(0, -1) as keyof typeof Side],
+        castling: {
+            canWhiteCastle: JSON.parse(metadata[4]!),
+            canBlackCastle: JSON.parse(metadata[6]!.slice(0, -1)),
+        },
+        enpassant: metadata[8] === "false" ? false : {
+            x: boardFiles.indexOf(metadata[8]![0]!) + 1 as PartialCoord,
+            y: parseInt(metadata[8]![1]!) as PartialCoord,
+        },
+    };
 }
 
 export {
@@ -271,4 +312,5 @@ export {
     defaultPosition,
     completedPositionToPosition,
     getPositionString,
+    getPositionFromString,
 };
