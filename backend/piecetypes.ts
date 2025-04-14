@@ -1,6 +1,6 @@
 import Fraction from './arithmetic.ts';
 
-enum Piece {
+export enum Piece {
     pawn = "pawn",
     knight = "knight",
     bishop = "bishop",
@@ -9,23 +9,16 @@ enum Piece {
     king = "king",
 }
 
-enum Side {
+export enum Side {
     white = "white",
     black = "black",
 }
 
-interface ColoredPiece {
+export interface ColoredPiece {
     piece: Piece;
     side: Side;
 }
 
-interface IndexedPiece extends ColoredPiece {
+export interface IndexedPiece extends ColoredPiece {
     index: number;
 }
-
-export {
-    Piece,
-    Side,
-    ColoredPiece,
-    IndexedPiece,
-};

@@ -1,4 +1,4 @@
-class Fraction {
+export default class Fraction {
     numerator: number;
     denominator: number;
 
@@ -56,5 +56,3 @@ class Fraction {
         return `${this.numerator}/${this.denominator}`;
     }
 }
-
-export default Fraction;

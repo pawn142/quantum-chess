@@ -1,24 +1,24 @@
 import Fraction from './arithmetic.ts';
 import { Side } from './piecetypes.ts';
 
-const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
+export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
-type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-interface Coord {
+export interface Coord {
     x: PartialCoord;
     y: PartialCoord;
 }
 
-interface WeightedCoord extends Coord {
+export interface WeightedCoord extends Coord {
     probability: Fraction;
 }
 
-function coordserialize(coordinate: Coord): string {
+export function coordserialize(coordinate: Coord): string {
     return boardFiles[coordinate.x - 1] + coordinate.y.toString();
 }
 
-const chessboard: Coord[] = [
+export const chessboard: Coord[] = [
     {x: 1, y: 1},
     {x: 2, y: 1},
     {x: 3, y: 1},
@@ -85,7 +85,7 @@ const chessboard: Coord[] = [
     {x: 8, y: 8},
 ];
 
-class PieceEntanglement {
+export class PieceEntanglement {
     from: number;
     to: number;
     constructor(fromCandidate: number, toCandidate: number, positionList: Coord[] | WeightedCoord[] = chessboard) {
@@ -100,12 +100,12 @@ class PieceEntanglement {
     }
 }
 
-interface PieceSet {
+export interface PieceSet {
     positions: WeightedCoord[];
     pieceEntanglements: PieceEntanglement[];
 };
 
-interface HalfPosition {
+export interface HalfPosition {
     p1?: PieceSet;
     p2?: PieceSet;
     p3?: PieceSet;
@@ -124,7 +124,7 @@ interface HalfPosition {
     r2?: PieceSet;
 }
 
-interface CompletedHalfPosition {
+export interface CompletedHalfPosition {
     p1?: Coord;
     p2?: Coord;
     p3?: Coord;
@@ -143,7 +143,7 @@ interface CompletedHalfPosition {
     r2?: Coord;
 }
 
-interface GamePosition {
+export interface GamePosition {
     whitePosition: HalfPosition;
     blackPosition: HalfPosition;
     whoseTurn: Side;
@@ -154,7 +154,7 @@ interface GamePosition {
     enpassant: Coord | false;
 }
 
-interface CompletedPosition {
+export interface CompletedPosition {
     whitePosition: CompletedHalfPosition;
     blackPosition: CompletedHalfPosition;
     whoseTurn?: Side;
@@ -165,7 +165,7 @@ interface CompletedPosition {
     enpassant?: Coord | false;
 }
 
-const defaultPosition: CompletedPosition = {
+export const defaultPosition: CompletedPosition = {
     whitePosition: {
         p1: {x: 1, y: 2},
         p2: {x: 2, y: 2},
@@ -210,7 +210,7 @@ const defaultPosition: CompletedPosition = {
     enpassant: false,
 };
 
-function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
+export function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
     return {
         whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceCoordKey, whitePieceCoord]: [string, Coord]) => ([
             whitePieceCoordKey,
@@ -232,7 +232,7 @@ function completedPositionToPosition(completedPosition: CompletedPosition): Game
     };
 }
 
-function getPositionString(gamePosition: GamePosition): string {
+export function getPositionString(gamePosition: GamePosition): string {
     let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
     Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
         let whitePieceString: string = "";
@@ -257,7 +257,7 @@ function getPositionString(gamePosition: GamePosition): string {
     return positionString;
 }
 
-function getPositionFromString(positionString: string): GamePosition {
+export function getPositionFromString(positionString: string): GamePosition {
     const components: string[] = positionString.split("|");
     const metadata: string[] = components[0]!.split(" ");
     let whitePositionArray: [string, PieceSet][] = [];
@@ -295,22 +295,3 @@ function getPositionFromString(positionString: string): GamePosition {
         },
     };
 }
-
-export {
-    boardFiles,
-    PartialCoord,
-    Coord,
-    WeightedCoord,
-    coordserialize,
-    chessboard,
-    PieceEntanglement,
-    PieceSet,
-    HalfPosition,
-    CompletedHalfPosition,
-    GamePosition,
-    CompletedPosition,
-    defaultPosition,
-    completedPositionToPosition,
-    getPositionString,
-    getPositionFromString,
-};
