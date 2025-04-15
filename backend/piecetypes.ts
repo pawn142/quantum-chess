@@ -11,21 +11,21 @@ export enum Piece {
 }
 
 export enum Side {
-    white = "white",
-    black = "black",
+	white = "white",
+	black = "black",
 }
 
 export interface ColoredPiece {
-    piece: Piece;
-    side: Side;
+	piece: Piece;
+	side: Side;
 }
 
 export interface EntangledPiece extends ColoredPiece {
-    toArray: EntangledPiece[];
+	toArray: EntangledPiece[];
 }
 
 export interface Move {
-    start: Coord;
-    end: Coord;
-    pieceBeingMoved: EntangledPiece;
+	start: Coord;
+	end: Coord;
+	pieceBeingMoved: EntangledPiece;
 }
