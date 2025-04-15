@@ -2,7 +2,7 @@ import Fraction from './arithmetic.ts';
 import { PartialCoord, Coord } from './metatypes.ts';
 
 export enum Piece {
-    pawn = "pawn",
+	pawn = "pawn",
     knight = "knight",
     bishop = "bishop",
     rook = "rook",
