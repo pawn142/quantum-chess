@@ -3,11 +3,11 @@ import { PartialCoord, Coord } from './metatypes.ts';
 
 export enum Piece {
 	pawn = "pawn",
-    knight = "knight",
-    bishop = "bishop",
-    rook = "rook",
-    queen = "queen",
-    king = "king",
+	knight = "knight",
+	bishop = "bishop",
+	rook = "rook",
+	queen = "queen",
+	king = "king",
 }
 
 export enum Side {
