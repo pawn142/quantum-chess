@@ -237,8 +237,8 @@ export function getPositionString(gamePosition: GamePosition): string {
 	let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
 	Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
 		let whitePieceString: string = "";
-		for (const whiteCoordinate of whitePiece.positions) {
-			whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize() + (whiteCoordinate.promotion ? "," + whiteCoordinate.promotion : "")}),`;
+		for (const whiteCoord of whitePiece.positions) {
+			whitePieceString += ` (${coordserialize(whiteCoord)},${whiteCoord.probability.serialize() + (whiteCoord.promotion ? "," + whiteCoord.promotion : "")}),`;
 		}
 		for (const whiteEntanglement of whitePiece.pieceEntanglements) {
 			whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
@@ -247,8 +247,8 @@ export function getPositionString(gamePosition: GamePosition): string {
 	});
 	Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
 		let blackPieceString: string = "";
-		for (const blackCoordinate of blackPiece.positions) {
-			blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize() + (blackCoordinate.promotion ? "," + blackCoordinate.promotion : "")}),`;
+		for (const blackCoord of blackPiece.positions) {
+			blackPieceString += ` (${coordserialize(blackCoord)},${blackCoord.probability.serialize() + (blackCoord.promotion ? "," + blackCoord.promotion : "")}),`;
 		}
 		for (const blackEntanglement of blackPiece.pieceEntanglements) {
 			blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
@@ -318,6 +318,14 @@ export function isValidPosition(positionCandidate: GamePosition): boolean {
 export function isValidString(stringCandidate: string): boolean {
 	try {
 		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "0|", "9|", "0,", "9,", ",-"].includes(stringCandidate.slice(index, index + 2)));
+	} catch {
+		return false;
+	}
+}
+
+export function isSrictlyValidPosition(positionCandidate: GamePosition): boolean {
+	try {
+		return isValidString(getPositionString(positionCandidate));
 	} catch {
 		return false;
 	}

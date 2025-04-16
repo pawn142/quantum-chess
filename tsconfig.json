@@ -9,7 +9,7 @@
 		"checkJs": true,
 		"declaration": true,
 		"esModuleInterop": true,
-		"lib": [ "ESNext" ],
+		"lib": ["ESNext"],
 		"incremental": true,
 		"noEmitOnError": true,
 		"noErrorTruncation": true,

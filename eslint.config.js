@@ -5,7 +5,7 @@ import parserTypescript from "@typescript-eslint/parser";
 export default [
 	pluginJs.configs.recommended,
 	{
-		files: ["**/*.js","**/*.ts"],
+		files: [ "**/*.js", "**/*.ts" ],
 		// plugins: { "@typescript-eslint": pluginTypescript },
 		// ignores: ["dist/"],
 		rules: {
@@ -51,7 +51,7 @@ export default [
 		}
 	},
 	{
-		files: ["**/*.ts"],
+		files: [ "**/*.ts" ],
 		rules: {
 			'dot-notation': 'off', 
 			'no-undef': 'off'
