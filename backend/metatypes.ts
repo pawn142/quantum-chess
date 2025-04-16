@@ -209,7 +209,7 @@ export const defaultPosition: CompletedPosition = {
 		canBlackCastle: true,
 	},
 	enpassant: false,
-};
+} as const;
 
 export function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
 	return {
@@ -237,20 +237,20 @@ export function getPositionString(gamePosition: GamePosition): string {
 	let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
 	Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
 		let whitePieceString: string = "";
-		for (let whiteCoordinate of whitePiece.positions) {
+		for (const whiteCoordinate of whitePiece.positions) {
 			whitePieceString += ` (${coordserialize(whiteCoordinate)},${whiteCoordinate.probability.serialize() + (whiteCoordinate.promotion ? "," + whiteCoordinate.promotion : "")}),`;
 		}
-		for (let whiteEntanglement of whitePiece.pieceEntanglements) {
+		for (const whiteEntanglement of whitePiece.pieceEntanglements) {
 			whitePieceString += ` <${whiteEntanglement.from}-${whiteEntanglement.to}>,`;
 		}
 		positionString += `|${whiteKey[0]!.toUpperCase() + whiteKey.slice(1)}:${whitePieceString.slice(0, -1)}`;
 	});
 	Object.entries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
 		let blackPieceString: string = "";
-		for (let blackCoordinate of blackPiece.positions) {
+		for (const blackCoordinate of blackPiece.positions) {
 			blackPieceString += ` (${coordserialize(blackCoordinate)},${blackCoordinate.probability.serialize() + (blackCoordinate.promotion ? "," + blackCoordinate.promotion : "")}),`;
 		}
-		for (let blackEntanglement of blackPiece.pieceEntanglements) {
+		for (const blackEntanglement of blackPiece.pieceEntanglements) {
 			blackPieceString += ` <${blackEntanglement.from}-${blackEntanglement.to}>,`;
 		}
 		positionString += `|${blackKey}:${blackPieceString.slice(0, -1)}`;
@@ -260,8 +260,9 @@ export function getPositionString(gamePosition: GamePosition): string {
 
 export function isValidString(stringCandidate: string): boolean {
 	try {
-		return getPositionString(getPositionFromString(stringCandidate)) === stringCandidate &&
-			
+		const positionCandidate = getPositionFromString(stringCandidate);
+		
+		return getPositionString(positionCandidate) === stringCandidate;
 	} catch {
 		return false;
 	}
@@ -284,7 +285,7 @@ export function getPositionFromString(positionString: string): GamePosition {
 					probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
 				});
 			} else {
-				entanglementArray.push(new PieceEntanglement(parseInt(segment[1]!), parseInt(segment[3]!)));
+				entanglementArray.push(new PieceEntanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!.slice(0, -1))));
 			}
 		}
 		(pieceString[0] === pieceString[0]!.toLowerCase() ? blackPositionArray : whitePositionArray).push([pieceString.slice(0, 2).toLowerCase(), {
