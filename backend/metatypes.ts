@@ -213,20 +213,20 @@ export const defaultPosition: CompletedPosition = {
 
 export function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
 	return {
-		whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whitePieceCoordKey, whitePieceCoord]: [string, Coord]) => ([
-			whitePieceCoordKey,
+		whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).map(([whiteCoordKey, whiteCoord]: [string, Coord]) => [
+			whiteCoordKey,
 			{
-				positions: [Object.fromEntries([...Object.entries(whitePieceCoord), ["probability", new Fraction(1, 1)]])],
+				positions: [Object.fromEntries([...Object.entries(whiteCoord), ["probability", new Fraction(1, 1)]])],
 				pieceEntanglements: [],
 			},
-		]))),
-		blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackPieceCoordKey, blackPieceCoord]: [string, Coord]) => ([
-			blackPieceCoordKey,
+		])),
+		blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).map(([blackCoordKey, blackCoord]: [string, Coord]) => [
+			blackCoordKey,
 			{
-				positions: [Object.fromEntries([...Object.entries(blackPieceCoord), ["probability", new Fraction(1, 1)]])],
+				positions: [Object.fromEntries([...Object.entries(blackCoord), ["probability", new Fraction(1, 1)]])],
 				pieceEntanglements: [],
 			},
-		]))),
+		])),
 		whoseTurn: (completedPosition.whoseTurn ?? defaultPosition.whoseTurn)!,
 		castling: (completedPosition.castling ?? defaultPosition.castling)!,
 		enpassant: (completedPosition.enpassant ?? defaultPosition.enpassant)!,
@@ -256,23 +256,6 @@ export function getPositionString(gamePosition: GamePosition): string {
 		positionString += `|${blackKey}:${blackPieceString.slice(0, -1)}`;
 	});
 	return positionString;
-}
-
-export function isValidPosition(positionCandidate: GamePosition): boolean {
-	try {
-		
-	} catch {
-		return false;
-	}
-	return true;
-}
-
-export function isValidString(stringCandidate: string): boolean {
-	try {
-		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate;
-	} catch {
-		return false;
-	}
 }
 
 export function getPositionFromString(positionString: string): GamePosition {
@@ -313,4 +296,29 @@ export function getPositionFromString(positionString: string): GamePosition {
 			y: parseInt(metadata[8]![1]!) as PartialCoord,
 		},
 	};
+}
+
+export function isValidPosition(positionCandidate: GamePosition): boolean {
+	try {
+		const properKeys: string[] = ["", ...Object.keys(defaultPosition.whitePosition)] as const;
+		const candidateKeys: string[] = ["", ...Object.keys(positionCandidate.whitePosition), "", ...Object.keys(positionCandidate.blackPosition)] as const;
+		return [...Array(candidateKeys.length).keys()].every((pieceIndex: number) => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1])) &&
+		       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
+		       [...Object.entries(positionCandidate.whitePosition), ...Object.entries(positionCandidate.blackPosition)].every((pieceEntry: [string, PieceSet]) => JSON.stringify(pieceEntry[1].positions.reduce((accumulator, current) => ({
+			       x: 1,
+			       y: 1,
+			       probability: Fraction.sum(accumulator.probability, current.probability)
+		       })).probability) === '{"numerator":1,"denominator":1}' && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every((position: WeightedCoord) => ![1, 8].includes(position.y)))) &&
+		       (!positionCandidate.enpassant || [2, 7].includes((positionCandidate.enpassant as Coord).y) && (positionCandidate.whoseTurn === Side.white ? Object.entries(positionCandidate.blackPosition) : Object.entries(positionCandidate.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some((position: WeightedCoord) => position.x === (positionCandidate.enpassant as Coord).x && [(positionCandidate.enpassant as Coord).y + 2, (positionCandidate.enpassant as Coord).y - 2].includes(position.y))));
+	} catch {
+		return false;
+	}
+}
+
+export function isValidString(stringCandidate: string): boolean {
+	try {
+		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "0|", "9|", "0,", "9,", ",-"].includes(stringCandidate.slice(index, index + 2)));
+	} catch {
+		return false;
+	}
 }

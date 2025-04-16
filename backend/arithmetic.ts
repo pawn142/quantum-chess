@@ -32,7 +32,7 @@ export default class Fraction {
 	}
 
 	add(other: Fraction): void {
-		const commonMultiple: number = Fraction.lcm(this.numerator, this.denominator);
+		const commonMultiple: number = Fraction.lcm(this.denominator, other.denominator);
 		this.numerator = (this.numerator * (commonMultiple / this.denominator)) + (other.numerator * (commonMultiple / other.denominator));
 		this.denominator = commonMultiple;
 		this.simplify();
@@ -42,6 +42,18 @@ export default class Fraction {
 		this.numerator *= other.numerator;
 		this.denominator *= other.denominator;
 		this.simplify();
+	}
+
+	static sum(fracOne: Fraction, fracTwo: Fraction): Fraction {
+		let temp: Fraction = fracOne;
+		temp.add(fracTwo);
+		return temp;
+	}
+
+	static product(fracOne: Fraction, fracTwo: Fraction): Fraction {
+		let temp: Fraction = fracOne;
+		temp.multiply(fracTwo);
+		return temp;
 	}
 
 	static reciprocal(fraction: Fraction): Fraction {
