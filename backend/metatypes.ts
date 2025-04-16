@@ -258,6 +258,15 @@ export function getPositionString(gamePosition: GamePosition): string {
     return positionString;
 }
 
+export function isValidString(stringCandidate: string): boolean {
+    try {
+        return getPositionString(getPositionFromString(stringCandidate)) === stringCandidate &&
+               
+    } catch {
+        return false;
+    }
+}
+
 export function getPositionFromString(positionString: string): GamePosition {
     const components: string[] = positionString.split("|");
     const metadata: string[] = components[0]!.split(" ");
