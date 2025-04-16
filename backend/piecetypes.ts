@@ -21,7 +21,7 @@ export interface ColoredPiece {
 }
 
 export interface EntangledPiece extends ColoredPiece {
-	toArray: EntangledPiece[];
+	toArray: Coord[];
 }
 
 export interface Move {

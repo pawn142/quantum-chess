@@ -5,8 +5,8 @@
 		"moduleResolution": "Bundler",
 		"jsx": "react-jsx",
 		"allowImportingTsExtensions": true,
+		"strictFunctionTypes": true,
 		"strictNullChecks": true,
-		"strictFunctionTypes": true
 	},
 	"exclude": [
 		"node_modules",
