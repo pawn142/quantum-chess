@@ -1,8 +1,13 @@
+import pluginJs from "@eslint/js";
+// import pluginTypescript from "@typescript-eslint/eslint-plugin";
+import parserTypescript from "@typescript-eslint/parser";
+
 export default [
 	pluginJs.configs.recommended,
 	{
 		files: ["**/*.js","**/*.ts"],
-		ignores: ["dist/"],
+		// plugins: { "@typescript-eslint": pluginTypescript },
+		// ignores: ["dist/"],
 		rules: {
 			'no-undef': 'error',
 			'no-unused-vars': 'warn',
