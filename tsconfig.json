@@ -6,6 +6,7 @@
 		"allowJs": true,
 		"allowUnreachableCode": false,
 		"alwaysStrict": true,
+		"checkJs": true,
 		"declaration": true,
 		"esModuleInterop": true,
 		"lib": [ "ESNext" ],
