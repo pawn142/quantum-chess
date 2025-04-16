@@ -258,11 +258,18 @@ export function getPositionString(gamePosition: GamePosition): string {
 	return positionString;
 }
 
+export function isValidPosition(positionCandidate: GamePosition): boolean {
+	try {
+		
+	} catch {
+		return false;
+	}
+	return true;
+}
+
 export function isValidString(stringCandidate: string): boolean {
 	try {
-		const positionCandidate = getPositionFromString(stringCandidate);
-		
-		return getPositionString(positionCandidate) === stringCandidate;
+		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate;
 	} catch {
 		return false;
 	}
