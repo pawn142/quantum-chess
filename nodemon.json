@@ -3,5 +3,5 @@
 		"./dist/**/*"
 	],
 	"exec": "npm run build && npm run start",
-	"ext": "js,ts,html,css,json,png,webm"
+	"ext": "js,html,css,jpg,png,gif,mp3,wav,webp,webm,toml,ejs,json,mjs,md,ts"
 }
