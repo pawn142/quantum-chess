@@ -308,7 +308,7 @@ export function isValidPosition(positionCandidate: GamePosition): boolean {
 			       x: 1,
 			       y: 1,
 			       probability: Fraction.sum(accumulator.probability, current.probability)
-		       })).probability) === '{"numerator":1,"denominator":1}' && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every((position: WeightedCoord) => ![1, 8].includes(position.y)))) &&
+		       })).probability) === '{"numerator":1,"denominator":1}' && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every((position: WeightedCoord) => ![1, 8].includes(position.y) || position.promotion))) &&
 		       (!positionCandidate.enpassant || [2, 7].includes((positionCandidate.enpassant as Coord).y) && (positionCandidate.whoseTurn === Side.white ? Object.entries(positionCandidate.blackPosition) : Object.entries(positionCandidate.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some((position: WeightedCoord) => position.x === (positionCandidate.enpassant as Coord).x && [(positionCandidate.enpassant as Coord).y + 2, (positionCandidate.enpassant as Coord).y - 2].includes(position.y))));
 	} catch {
 		return false;
