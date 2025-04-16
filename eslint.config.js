@@ -39,7 +39,7 @@ export default [
 			'no-empty': 'off',
 			'no-prototype-builtins': 'off',
 			// "no-multi-spaces": "error",
-			"max-lines": ["warn", 10000]
+			"max-lines": ["warn", 10000],
 			"complexity": ["warn", { "max": 64 }]
 		},
 		languageOptions: {
