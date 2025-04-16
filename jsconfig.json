@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "nodenext",
+		"target": "ESNext",
+		"jsx": "react-jsx",
+		"allowImportingTsExtensions": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true
+	},
+	"exclude": [
+		"node_modules",
+		"**/node_modules/*"
+	]
+}
