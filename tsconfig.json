@@ -19,7 +19,7 @@
 		"strictNullChecks": true,
 		"strictPropertyInitialization": true,
 		"outDir": "./dist",
-		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
 	},
 	"include": [ "dist/**/*" ]
 }
