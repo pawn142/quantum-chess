@@ -3,6 +3,7 @@
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
+		"allowArbitraryExtensions": true,
 		"allowJs": true,
 		"allowUnreachableCode": false,
 		"alwaysStrict": true,
