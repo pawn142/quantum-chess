@@ -1,78 +1,11 @@
 import Fraction from './arithmetic.ts';
-import { Coord, PartialCoord, Piece, Side, WeightedCoord } from './piecetypes.ts';
+import { chessboard, Coord, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 
 export function coordserialize(coordinate: Coord): string {
 	return boardFiles[coordinate.x - 1] + coordinate.y.toString();
 }
-
-export const chessboard: Coord[] = [
-	{x: 1, y: 1},
-	{x: 2, y: 1},
-	{x: 3, y: 1},
-	{x: 4, y: 1},
-	{x: 5, y: 1},
-	{x: 6, y: 1},
-	{x: 7, y: 1},
-	{x: 8, y: 1},
-	{x: 1, y: 2},
-	{x: 2, y: 2},
-	{x: 3, y: 2},
-	{x: 4, y: 2},
-	{x: 5, y: 2},
-	{x: 6, y: 2},
-	{x: 7, y: 2},
-	{x: 8, y: 2},
-	{x: 1, y: 3},
-	{x: 2, y: 3},
-	{x: 3, y: 3},
-	{x: 4, y: 3},
-	{x: 5, y: 3},
-	{x: 6, y: 3},
-	{x: 7, y: 3},
-	{x: 8, y: 3},
-	{x: 1, y: 4},
-	{x: 2, y: 4},
-	{x: 3, y: 4},
-	{x: 4, y: 4},
-	{x: 5, y: 4},
-	{x: 6, y: 4},
-	{x: 7, y: 4},
-	{x: 8, y: 4},
-	{x: 1, y: 5},
-	{x: 2, y: 5},
-	{x: 3, y: 5},
-	{x: 4, y: 5},
-	{x: 5, y: 5},
-	{x: 6, y: 5},
-	{x: 7, y: 5},
-	{x: 8, y: 5},
-	{x: 1, y: 6},
-	{x: 2, y: 6},
-	{x: 3, y: 6},
-	{x: 4, y: 6},
-	{x: 5, y: 6},
-	{x: 6, y: 6},
-	{x: 7, y: 6},
-	{x: 8, y: 6},
-	{x: 1, y: 7},
-	{x: 2, y: 7},
-	{x: 3, y: 7},
-	{x: 4, y: 7},
-	{x: 5, y: 7},
-	{x: 6, y: 7},
-	{x: 7, y: 7},
-	{x: 8, y: 7},
-	{x: 1, y: 8},
-	{x: 2, y: 8},
-	{x: 3, y: 8},
-	{x: 4, y: 8},
-	{x: 5, y: 8},
-	{x: 6, y: 8},
-	{x: 7, y: 8},
-	{x: 8, y: 8},
-] as const;
 
 export class PieceEntanglement {
 	from: number;
@@ -135,7 +68,7 @@ export interface CompletedHalfPosition {
 export interface GamePosition {
 	whitePosition: HalfPosition;
 	blackPosition: HalfPosition;
-	whoseTurn: Side;
+	whoseTurn: keyof typeof Sides;
 	castling: {
 		canWhiteCastle: boolean;
 		canBlackCastle: boolean;
@@ -146,7 +79,7 @@ export interface GamePosition {
 export interface CompletedPosition {
 	whitePosition: CompletedHalfPosition;
 	blackPosition: CompletedHalfPosition;
-	whoseTurn?: Side;
+	whoseTurn?: keyof typeof Sides;
 	castling?: {
 		canWhiteCastle: boolean;
 		canBlackCastle: boolean;
@@ -191,7 +124,7 @@ export const defaultPosition: CompletedPosition = {
 		n2: {x: 7, y: 8},
 		r2: {x: 8, y: 8},
 	},
-	whoseTurn: Side.white,
+	whoseTurn: Sides.white,
 	castling: {
 		canWhiteCastle: true,
 		canBlackCastle: true,
@@ -249,17 +182,17 @@ export function getPositionString(gamePosition: GamePosition): string {
 export function getPositionFromString(positionString: string): GamePosition {
 	const components: string[] = positionString.split("|");
 	const metadata: string[] = components[0]!.split(" ");
-	let whitePositionArray: [string, PieceSet][] = [];
-	let blackPositionArray: [string, PieceSet][] = [];
+	const whitePositionArray: [string, PieceSet][] = [];
+	const blackPositionArray: [string, PieceSet][] = [];
 	for (const pieceString of components.slice(1)) {
-		let positionArray: WeightedCoord[] = [];
-		let entanglementArray: PieceEntanglement[] = [];
+		const positionArray: WeightedCoord[] = [];
+		const entanglementArray: PieceEntanglement[] = [];
 		for (const segment of pieceString.split(" ").slice(1)) {
 			if (segment[0] === "(") {
 				positionArray.push({
 					x: boardFiles.indexOf(segment[1]!) + 1 as PartialCoord,
 					y: parseInt(segment[2]!) as PartialCoord,
-					promotion: Piece[segment.split(",")[2]?.slice(0, -1) as keyof typeof Piece],
+					promotion: Pieces[segment.split(",")[2]?.slice(0, -1) as keyof typeof Pieces],
 					probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
 				});
 			} else {
@@ -274,7 +207,7 @@ export function getPositionFromString(positionString: string): GamePosition {
 	return {
 		whitePosition: Object.fromEntries(whitePositionArray),
 		blackPosition: Object.fromEntries(blackPositionArray),
-		whoseTurn: Side[metadata[1]!.slice(0, -1) as keyof typeof Side],
+		whoseTurn: Sides[metadata[1]!.slice(0, -1) as keyof typeof Sides],
 		castling: {
 			canWhiteCastle: JSON.parse(metadata[4]!),
 			canBlackCastle: JSON.parse(metadata[6]!.slice(0, -1)),
@@ -297,7 +230,7 @@ export function isValidPosition(positionCandidate: GamePosition): boolean {
 			       y: 1,
 			       probability: Fraction.sum(accumulator.probability, current.probability)
 		       })).probability) === '{"numerator":1,"denominator":1}' && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every((position: WeightedCoord) => ![1, 8].includes(position.y) || position.promotion))) &&
-		       (!positionCandidate.enpassant || [2, 7].includes((positionCandidate.enpassant as Coord).y) && (positionCandidate.whoseTurn === Side.white ? Object.entries(positionCandidate.blackPosition) : Object.entries(positionCandidate.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some((position: WeightedCoord) => position.x === (positionCandidate.enpassant as Coord).x && [(positionCandidate.enpassant as Coord).y + 2, (positionCandidate.enpassant as Coord).y - 2].includes(position.y))));
+		       (!positionCandidate.enpassant || [2, 7].includes((positionCandidate.enpassant as Coord).y) && (positionCandidate.whoseTurn === Sides.white ? Object.entries(positionCandidate.blackPosition) : Object.entries(positionCandidate.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some((position: WeightedCoord) => position.x === (positionCandidate.enpassant as Coord).x && [(positionCandidate.enpassant as Coord).y + 2, (positionCandidate.enpassant as Coord).y - 2].includes(position.y))));
 	} catch {
 		return false;
 	}
