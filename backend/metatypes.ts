@@ -1,19 +1,7 @@
 import Fraction from './arithmetic.ts';
-import { Piece, Side } from './piecetypes.ts';
+import { Coord, PartialCoord, Piece, Side, WeightedCoord } from './piecetypes.ts';
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
-
-export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-
-export interface Coord {
-	x: PartialCoord;
-	y: PartialCoord;
-	promotion?: Piece;
-}
-
-export interface WeightedCoord extends Coord {
-	probability: Fraction;
-}
 
 export function coordserialize(coordinate: Coord): string {
 	return boardFiles[coordinate.x - 1] + coordinate.y.toString();

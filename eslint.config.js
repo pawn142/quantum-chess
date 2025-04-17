@@ -31,7 +31,7 @@ export default [
 				'SwitchCase': 1,
 				"ignoredNodes": ["ConditionalExpression", "ArrayExpression"]
 			}],
-			// "prefer-const": "error",
+			// "prefer-const": "warn",
 			"max-depth": ["warn", 64],
 			// "no-var": "error",
 			"eqeqeq": ["error", "always"],

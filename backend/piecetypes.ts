@@ -1,5 +1,16 @@
 import Fraction from './arithmetic.ts';
-import { PartialCoord, Coord } from './metatypes.ts';
+
+export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface Coord {
+	x: PartialCoord;
+	y: PartialCoord;
+	promotion?: Piece;
+}
+
+export interface WeightedCoord extends Coord {
+	probability: Fraction;
+}
 
 export enum Piece {
 	pawn = "pawn",
@@ -20,12 +31,23 @@ export interface ColoredPiece {
 	side: Side;
 }
 
-export interface EntangledPiece extends ColoredPiece {
+export interface CompletedPiece extends ColoredPiece {
+	position: Coord;
+}
+
+export interface IncompletePiece extends ColoredPiece {
+	weightedPosition: WeightedCoord;
+}
+
+export interface EntangledPiece extends IncompletePiece {
 	toArray: Coord[];
+}
+
+export interface FinishedPiece extends EntangledPiece {
+	ofIndex: number;
 }
 
 export interface Move {
 	start: Coord;
 	end: Coord;
-	pieceBeingMoved: EntangledPiece;
 }
