@@ -106,17 +106,35 @@ export interface IncompletePiece extends ColoredPiece {
 	weightedPosition: WeightedCoord;
 }
 
-export interface FinishedPiece extends IncompletePiece {
+export interface EntangledPiece extends IncompletePiece {
 	entangledTo: Coord[];
+}
+
+export interface FinishedPiece extends IncompletePiece {
 	ofIndex: number;
 }
 
-export interface ObjectOrientedPosition {
-	pieceSets: ColoredPiece[];
-	partialPieces: FinishedPiece[];
+
+
+export interface ObjectSet {
+	pieceType: ColoredPiece;
+	partialPieces: EntangledPiece[];
 }
 
-export type anyPiece = ColoredPiece | CompletedPiece | IncompletePiece | FinishedPiece;
+export type CompletedObjectPosition = ObjectSet[];
+
+export interface ChessboardPosition {
+	fullPieces: ColoredPiece[];
+	squares: [FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
+	         ];
+}
 
 export interface Move {
 	start: Coord;
@@ -124,7 +142,7 @@ export interface Move {
 }
 
 export interface PieceMove {
-	piece: anyPiece;
+	piece: ColoredPiece | CompletedPiece | IncompletePiece | FinishedPiece;
 	move: Move;
 }
 

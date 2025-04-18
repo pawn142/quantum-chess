@@ -1,5 +1,5 @@
 import Fraction from './arithmetic.ts';
-import { chessboard, Coord, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
+import { chessboard, CompletedObjectPosition, CompletedPiece, Coord, EntangledPiece, IncompletePiece, ObjectSet, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 
@@ -154,6 +154,12 @@ export function completedPositionToPosition(completedPosition: CompletedPosition
 	};
 }
 
+export function completedPositionToCompletedObjectPosition(completedPosition: CompletedPosition): CompletedObjectPosition {
+	const objectsArray: CompletedObjectPosition = [];
+	
+	return objectsArray;
+}
+
 export function getPositionString(gamePosition: GamePosition): string {
 	let positionString: string = `turn: ${gamePosition.whoseTurn}, castling: white ${gamePosition.castling.canWhiteCastle.toString()} black ${gamePosition.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.enpassant ? coordserialize(gamePosition.enpassant) : "false"}`;
 	Object.entries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
@@ -244,7 +250,7 @@ export function isValidString(stringCandidate: string): boolean {
 	}
 }
 
-export function isSrictlyValidPosition(positionCandidate: GamePosition): boolean {
+export function isStrictlyValidPosition(positionCandidate: GamePosition): boolean {
 	try {
 		return isValidString(getPositionString(positionCandidate));
 	} catch {
