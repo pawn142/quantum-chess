@@ -1,5 +1,5 @@
 import Fraction from './arithmetic.ts';
-import { chessboard, CompletedObjectPosition, CompletedPiece, Coord, EntangledPiece, IncompletePiece, ObjectSet, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
+import { chessboard, CompletedPiece, Coord, EntangledPiece, IncompletePiece, ObjectSet, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 
