@@ -114,16 +114,12 @@ export interface FinishedPiece extends IncompletePiece {
 	ofIndex: number;
 }
 
-
-
 export interface ObjectSet {
 	pieceType: ColoredPiece;
 	partialPieces: EntangledPiece[];
 }
 
-export type CompletedObjectPosition = ObjectSet[];
-
-export interface ChessboardPosition {
+export class ChessboardPosition {
 	fullPieces: ColoredPiece[];
 	squares: [FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
 		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
@@ -134,6 +130,8 @@ export interface ChessboardPosition {
 		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
 		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
 	         ];
+	constructor(objectPosition: ObjectSet[]) {
+	}
 }
 
 export interface Move {
