@@ -228,29 +228,30 @@ export function getPositionFromString(positionString: string): GamePosition {
 	};
 }
 
-export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
-	function keyToPiece(key: string): keyof typeof Pieces {
-		switch (key[0]) {
-			case "p":
-				return Pieces.pawn;
-			case "n":
-				return Pieces.knight;
-			case "b":
-				return Pieces.bishop;
-			case "r":
-				return Pieces.rook;
-			case "q":
-				return Pieces.queen;
-			case "k":
-				return Pieces.king;
-			default:
-				throw new Error("Unidentified key in use of 'positionToObjects'");
-		}
+function keyToPiece(key: string): keyof typeof Pieces {
+	switch (key[0]) {
+		case "p":
+			return Pieces.pawn;
+		case "n":
+			return Pieces.knight;
+		case "b":
+			return Pieces.bishop;
+		case "r":
+			return Pieces.rook;
+		case "q":
+			return Pieces.queen;
+		case "k":
+			return Pieces.king;
+		default:
+			throw new Error("Unidentified key in use of 'keyToPiece'");
 	}
+}
+
+export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
 	function pieceSetToPieces(pieceSet: PieceSet): PositionedPiece[] {
 		return pieceSet.positions.map(pieceCoord => ({
 			position: structuredClone(pieceCoord),
-			entangledTo: pieceSet.entanglements.filter(entanglement => pieceSet.positions[entanglement.from] === pieceCoord).map(entanglement => discardProbability(pieceSet.positions[entanglement.to])),
+			entangledTo: pieceSet.entanglements.filter(entanglement => pieceSet.positions[entanglement.from] === pieceCoord).map(entanglement => discardProbability(pieceSet.positions[entanglement.to]!)),
 		}));
 	}
 	return {
@@ -285,11 +286,11 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 	return {
 		whitePosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name[0] === pieceKey[0])[parseInt(pieceKey[1]) - 1].partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]!.partialPieces),
 		])),
 		blackPosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name[0] === pieceKey[0])[parseInt(pieceKey[1]) - 1].partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]!.partialPieces),
 		])),
 		otherData: structuredClone(objectPosition.otherData),
 	};
@@ -300,7 +301,7 @@ export function isValidPosition(gamePosition: GamePosition): boolean {
 		new ChessboardPosition(positionToObjects(gamePosition).objects);
 		const properKeys: string[] = ["", ...Object.keys(defaultPosition.whitePosition)] as const;
 		const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
-		return [...Array(candidateKeys.length).keys()].every(pieceIndex => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1])) &&
+		return [...Array(candidateKeys.length).keys()].every(pieceIndex => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1]!)) &&
 		       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
 		       [...Object.entries(gamePosition.whitePosition), ...Object.entries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => JSON.stringify(pieceEntry[1].positions.reduce((accumulator, current) => ({
 			       x: 1,
@@ -315,7 +316,7 @@ export function isValidPosition(gamePosition: GamePosition): boolean {
 
 export function isValidString(stringCandidate: string): boolean {
 	try {
-		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "0|", "9|", ",-"].includes(stringCandidate.slice(index, index + 2)));
+		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "un", "0|", "9|", ",-"].includes(stringCandidate.slice(index, index + 2)));
 	} catch {
 		return false;
 	}
