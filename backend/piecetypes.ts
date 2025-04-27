@@ -1,4 +1,5 @@
 import Fraction from './arithmetic.ts';
+import { GameData } from './metatypes.ts';
 
 export const Pieces = {
 	pawn: "pawn",
@@ -16,14 +17,29 @@ export const Sides = {
 
 export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
+export function isPartialCoord(candidate: number): candidate is PartialCoord {
+	return Number.isInteger(candidate) && 0 < candidate && candidate <= 8;
+}
+
 export interface Coord {
 	x: PartialCoord;
 	y: PartialCoord;
 	promotion?: keyof typeof Pieces;
 }
 
+export function isCoord(candidate: any): candidate is Coord {
+	return [["x", "y"], ["x", "y", "promotion"]].includes(Object.keys(candidate)) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
+}
+
 export interface WeightedCoord extends Coord {
 	probability: Fraction;
+}
+
+export function discardProbability(weightedCoord: WeightedCoord): Coord {
+	return {
+		x: weightedCoord.x,
+		y: weightedCoord.y,
+	};
 }
 
 export const chessboard: Coord[] = [
@@ -98,39 +114,79 @@ export interface ColoredPiece {
 	side: keyof typeof Sides;
 }
 
-export interface CompletedPiece extends ColoredPiece {
-	position: Coord;
-}
-
-export interface IncompletePiece extends ColoredPiece {
-	weightedPosition: WeightedCoord;
-}
-
-export interface EntangledPiece extends IncompletePiece {
+export interface PositionedPiece {
+	position: WeightedCoord;
 	entangledTo: Coord[];
 }
 
-export interface FinishedPiece extends IncompletePiece {
+export interface IndexedPiece {
 	ofIndex: number;
+	entangledTo: Coord[];
+	promotion?: keyof typeof Pieces;
 }
 
 export interface ObjectSet {
 	pieceType: ColoredPiece;
-	partialPieces: EntangledPiece[];
+	partialPieces: PositionedPiece[];
+}
+
+export interface ObjectPosition {
+	objects: ObjectSet[];
+	otherData: GameData;
+}
+
+export type OptionalPiece = IndexedPiece | undefined;
+
+export type FullBoard = [OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                         OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
+                        ];
+
+export function coordToIndex(coordinate: Coord): number {
+	if (isCoord(coordinate)) {
+		return 63 + coordinate.x - 8 * coordinate.y;
+	} else {
+		throw new Error("Invalid coordinate passed into 'coordToIndex'");
+	}
+}
+
+export function indexToCoord(index: number): Coord {
+	if (Number.isInteger(index) && 0 <= index && index < 64) {
+		return {
+			x: index % 8 + 1 as PartialCoord,
+			y: 8 - Math.floor(index / 8) as PartialCoord,
+		};
+	} else {
+		throw new Error("Invalid index passed into 'indexToCoord'");
+	}
 }
 
 export class ChessboardPosition {
 	fullPieces: ColoredPiece[];
-	squares: [FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-		      FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece, FinishedPiece,
-	         ];
+	squares: FullBoard;
 	constructor(objectPosition: ObjectSet[]) {
+		const pieceArray: ColoredPiece[] = [];
+		const squareArray: FullBoard = Array(64).fill(undefined) as FullBoard;
+		for (const object of objectPosition) {
+			for (const partialPiece of object.partialPieces) {
+				if (squareArray[coordToIndex(discardProbability(partialPiece.position))]) {
+					throw new Error("Multiple units on the same square in initialization of ChessboardPosition");
+				}
+				squareArray[coordToIndex(discardProbability(partialPiece.position))] = {
+					ofIndex: pieceArray.length,
+					entangledTo: structuredClone(partialPiece.entangledTo),
+					promotion: partialPiece.position.promotion,
+				};
+			}
+			pieceArray.push(object.pieceType);
+		}
+		this.fullPieces = pieceArray;
+		this.squares = squareArray;
 	}
 }
 
@@ -140,12 +196,6 @@ export interface Move {
 }
 
 export interface PieceMove {
-	piece: ColoredPiece | CompletedPiece | IncompletePiece | FinishedPiece;
+	piece: keyof typeof Pieces;
 	move: Move;
-}
-
-export function isPartiallyLegal(move: PieceMove): boolean {
-	switch (move.piece.name) {
-	case
-	}
 }
