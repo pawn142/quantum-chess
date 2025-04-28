@@ -250,7 +250,7 @@ function keyToPiece(key: string): keyof typeof Pieces {
 export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
 	function pieceSetToPieces(pieceSet: PieceSet): PositionedPiece[] {
 		return pieceSet.positions.map(pieceCoord => ({
-			position: structuredClone(pieceCoord),
+			position: Fraction.fractionalClone(pieceCoord),
 			entangledTo: pieceSet.entanglements.filter(entanglement => pieceSet.positions[entanglement.from] === pieceCoord).map(entanglement => discardProbability(pieceSet.positions[entanglement.to]!)),
 		}));
 	}
@@ -282,7 +282,7 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 		}
 		const coordinates: WeightedCoord[] = pieces.map(piece => piece.position);
 		return {
-			positions: pieces.map(piece => structuredClone(piece.position)),
+			positions: pieces.map(piece => Fraction.fractionalClone(piece.position)),
 			entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new PieceEntanglement(pieces.indexOf(piece), pieces.findIndex(candidate => candidate.position.x === pieceCoord.x && candidate.position.y === pieceCoord.y), coordinates))),
 		};
 	}

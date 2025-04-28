@@ -67,4 +67,16 @@ export default class Fraction {
 	serialize(): string {
 		return `${this.numerator}/${this.denominator}`;
 	}
+
+	static fractionalClone<T>(object: T): T {
+		if (object instanceof Fraction) {
+			return new Fraction(object.numerator, object.denominator) as T;
+		} else if (Array.isArray(object)) {
+			return object.map(element => Fraction.fractionalClone(element)) as T;
+		} else if (typeof object === "object" && object !== null) {
+			return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as T;
+		} else {
+			return object;
+		}
+	}
 }
