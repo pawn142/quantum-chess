@@ -45,13 +45,13 @@ export default class Fraction {
 	}
 
 	static sum(fracOne: Fraction, fracTwo: Fraction): Fraction {
-		const temp: Fraction = new Fraction(fracOne.numerator, fracTwo.numerator);
+		const temp: Fraction = new Fraction(fracOne.numerator, fracOne.denominator);
 		temp.add(fracTwo);
 		return temp;
 	}
 
 	static product(fracOne: Fraction, fracTwo: Fraction): Fraction {
-		const temp: Fraction = new Fraction(fracOne.numerator, fracTwo.numerator);
+		const temp: Fraction = new Fraction(fracOne.numerator, fracOne.denominator);
 		temp.multiply(fracTwo);
 		return temp;
 	}

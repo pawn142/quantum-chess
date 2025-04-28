@@ -28,18 +28,22 @@ export interface Coord {
 }
 
 export function isCoord(candidate: any): candidate is Coord {
-	return [["x", "y"], ["x", "y", "promotion"]].includes(Object.keys(candidate)) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
+	return ['["x","y"]', '["x","y","promotion"]'].includes(JSON.stringify(Object.keys(candidate))) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
 }
 
 export interface WeightedCoord extends Coord {
 	probability: Fraction;
 }
 
-export function discardProbability(weightedCoord: WeightedCoord): Coord {
-	return {
-		x: weightedCoord.x,
-		y: weightedCoord.y,
+export function discardProbability(coordinate: Coord | WeightedCoord): Coord {
+	const copy: any = {
+		x: coordinate.x,
+		y: coordinate.y,
 	};
+	if ("promotion" in coordinate) {
+		copy.promotion = coordinate.promotion;
+	}
+	return copy;
 }
 
 export const chessboard: Coord[] = [
@@ -183,7 +187,7 @@ export class ChessboardPosition {
 					promotion: partialPiece.position.promotion,
 				};
 			}
-			pieceArray.push(object.pieceType);
+			pieceArray.push(structuredClone(object.pieceType));
 		}
 		this.fullPieces = pieceArray;
 		this.squares = squareArray;
