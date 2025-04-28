@@ -12,7 +12,6 @@
 		"esModuleInterop": true,
 		"lib": ["ESNext"],
 		"incremental": true,
-		"noEmitOnError": true,
 		"noErrorTruncation": true,
 		"noImplicitAny": true,
 		"noImplicitOverride": true,

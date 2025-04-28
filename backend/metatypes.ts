@@ -88,40 +88,40 @@ export interface CompletedPosition {
 
 export const defaultPosition: CompletedPosition = {
 	whitePosition: {
-		p1: {x: 1, y: 2},
-		p2: {x: 2, y: 2},
-		p3: {x: 3, y: 2},
-		p4: {x: 4, y: 2},
-		p5: {x: 5, y: 2},
-		p6: {x: 6, y: 2},
-		p7: {x: 7, y: 2},
-		p8: {x: 8, y: 2},
-		r1: {x: 1, y: 1},
-		n1: {x: 2, y: 1},
-		b1: {x: 3, y: 1},
-		q1: {x: 4, y: 1},
-		k1: {x: 5, y: 1},
-		b2: {x: 6, y: 1},
-		n2: {x: 7, y: 1},
-		r2: {x: 8, y: 1},
+		p1: { x: 1, y: 2 },
+		p2: { x: 2, y: 2 },
+		p3: { x: 3, y: 2 },
+		p4: { x: 4, y: 2 },
+		p5: { x: 5, y: 2 },
+		p6: { x: 6, y: 2 },
+		p7: { x: 7, y: 2 },
+		p8: { x: 8, y: 2 },
+		r1: { x: 1, y: 1 },
+		n1: { x: 2, y: 1 },
+		b1: { x: 3, y: 1 },
+		q1: { x: 4, y: 1 },
+		k1: { x: 5, y: 1 },
+		b2: { x: 6, y: 1 },
+		n2: { x: 7, y: 1 },
+		r2: { x: 8, y: 1 },
 	},
 	blackPosition: {
-		p1: {x: 1, y: 7},
-		p2: {x: 2, y: 7},
-		p3: {x: 3, y: 7},
-		p4: {x: 4, y: 7},
-		p5: {x: 5, y: 7},
-		p6: {x: 6, y: 7},
-		p7: {x: 7, y: 7},
-		p8: {x: 8, y: 7},
-		r1: {x: 1, y: 8},
-		n1: {x: 2, y: 8},
-		b1: {x: 3, y: 8},
-		q1: {x: 4, y: 8},
-		k1: {x: 5, y: 8},
-		b2: {x: 6, y: 8},
-		n2: {x: 7, y: 8},
-		r2: {x: 8, y: 8},
+		p1: { x: 1, y: 7 },
+		p2: { x: 2, y: 7 },
+		p3: { x: 3, y: 7 },
+		p4: { x: 4, y: 7 },
+		p5: { x: 5, y: 7 },
+		p6: { x: 6, y: 7 },
+		p7: { x: 7, y: 7 },
+		p8: { x: 8, y: 7 },
+		r1: { x: 1, y: 8 },
+		n1: { x: 2, y: 8 },
+		b1: { x: 3, y: 8 },
+		q1: { x: 4, y: 8 },
+		k1: { x: 5, y: 8 },
+		b2: { x: 6, y: 8 },
+		n2: { x: 7, y: 8 },
+		r2: { x: 8, y: 8 },
 	},
 	otherData: {
 		whoseTurn: Sides.white,
@@ -276,7 +276,10 @@ export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
 }
 
 export function objectsToPosition(objectPosition: ObjectPosition): GamePosition {
-	function piecesToPieceSet(pieces: PositionedPiece[]): PieceSet {
+	function piecesToPieceSet(pieces?: PositionedPiece[]): PieceSet | undefined {
+		if (!pieces) {
+			return undefined;
+		}
 		const coordinates: WeightedCoord[] = pieces.map(piece => piece.position);
 		return {
 			positions: pieces.map(piece => structuredClone(piece.position)),
@@ -286,11 +289,11 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 	return {
 		whitePosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]!.partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
 		blackPosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]!.partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
 		otherData: structuredClone(objectPosition.otherData),
 	};
