@@ -1,5 +1,5 @@
 import Fraction from './arithmetic.ts';
-import { defaultPosition, GameData } from './metatypes.ts';
+import { GameData } from './metatypes.ts';
 
 export const Pieces = {
 	pawn: "pawn",
@@ -152,6 +152,51 @@ export interface CompletedPosition {
 	pieces: CompletedSet[];
 	otherData?: GameData;
 }
+
+export const defaultPosition: CompletedPosition = {
+	pieces: [
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 1, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 2, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 3, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 4, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 5, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 6, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 7, y: 2 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 8, y: 2 } },
+		{ pieceType: { name: Pieces.rook,   side: Sides.white }, wholePiece: { x: 1, y: 1 } },
+		{ pieceType: { name: Pieces.knight, side: Sides.white }, wholePiece: { x: 2, y: 1 } },
+		{ pieceType: { name: Pieces.bishop, side: Sides.white }, wholePiece: { x: 3, y: 1 } },
+		{ pieceType: { name: Pieces.queen,  side: Sides.white }, wholePiece: { x: 4, y: 1 } },
+		{ pieceType: { name: Pieces.king,   side: Sides.white }, wholePiece: { x: 5, y: 1 } },
+		{ pieceType: { name: Pieces.bishop, side: Sides.white }, wholePiece: { x: 6, y: 1 } },
+		{ pieceType: { name: Pieces.knight, side: Sides.white }, wholePiece: { x: 7, y: 1 } },
+		{ pieceType: { name: Pieces.rook,   side: Sides.white }, wholePiece: { x: 8, y: 1 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 1, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 2, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 3, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 4, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 5, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 6, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 7, y: 7 } },
+		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 8, y: 7 } },
+		{ pieceType: { name: Pieces.rook,   side: Sides.black }, wholePiece: { x: 1, y: 8 } },
+		{ pieceType: { name: Pieces.knight, side: Sides.black }, wholePiece: { x: 2, y: 8 } },
+		{ pieceType: { name: Pieces.bishop, side: Sides.black }, wholePiece: { x: 3, y: 8 } },
+		{ pieceType: { name: Pieces.queen,  side: Sides.black }, wholePiece: { x: 4, y: 8 } },
+		{ pieceType: { name: Pieces.king,   side: Sides.black }, wholePiece: { x: 5, y: 8 } },
+		{ pieceType: { name: Pieces.bishop, side: Sides.black }, wholePiece: { x: 6, y: 8 } },
+		{ pieceType: { name: Pieces.knight, side: Sides.black }, wholePiece: { x: 7, y: 8 } },
+		{ pieceType: { name: Pieces.rook,   side: Sides.black }, wholePiece: { x: 8, y: 8 } },
+	],
+	otherData: {
+		whoseTurn: Sides.white,
+		castling: {
+			canWhiteCastle: true,
+			canBlackCastle: true,
+		},
+		enpassant: false,
+	},
+} as const;
 
 export function completedPositionToObjects(completedPosition: CompletedPosition): ObjectPosition {
 	return {

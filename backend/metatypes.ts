@@ -90,7 +90,7 @@ export interface CompletedGamePosition {
 	otherData?: GameData;
 }
 
-export const defaultPosition: CompletedGamePosition = {
+export const defaultGamePosition: CompletedGamePosition = {
 	whitePosition: {
 		p1: { x: 1, y: 2 },
 		p2: { x: 2, y: 2 },
@@ -161,7 +161,7 @@ export function completedPositionToPosition(completedPosition: CompletedGamePosi
 				entanglements: [],
 			},
 		])),
-		otherData: structuredClone(completedPosition.otherData ?? defaultPosition.otherData)!,
+		otherData: structuredClone(completedPosition.otherData ?? defaultGamePosition.otherData)!,
 	};
 }
 
@@ -291,11 +291,11 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 		};
 	}
 	return {
-		whitePosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
+		whitePosition: Object.fromEntries(Object.keys(defaultGamePosition.whitePosition).map(pieceKey => [
 			pieceKey,
 			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
-		blackPosition: Object.fromEntries(Object.keys(defaultPosition.whitePosition).map(pieceKey => [
+		blackPosition: Object.fromEntries(Object.keys(defaultGamePosition.whitePosition).map(pieceKey => [
 			pieceKey,
 			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
@@ -306,7 +306,7 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 export function ValidPositionCheck(gamePosition: GamePosition): boolean {
 	try {
 		new ChessboardPosition(positionToObjects(gamePosition).objects);
-		const properKeys: string[] = ["", ...Object.keys(defaultPosition.whitePosition)] as const;
+		const properKeys: string[] = ["", ...Object.keys(defaultGamePosition.whitePosition)] as const;
 		const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
 		return [...Array(candidateKeys.length).keys()].every(pieceIndex => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1]!)) &&
 		       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
@@ -336,3 +336,33 @@ export function isValidPosition(positionCandidate: GamePosition): boolean {
 		return false;
 	}
 }
+
+export interface Settings {
+	winByCheckmate: boolean;
+	allowCastling: boolean;
+	partialQubitRewards: boolean;
+	measurePieceCaptures: boolean;
+	measureKingCaptures: boolean;
+	allowedMoveDeclarations: {
+		captureOnly: boolean;
+		noCapture: boolean;
+		checkOnly: boolean;
+		noCheck: boolean;
+		nonLeaping: boolean;
+	},
+}
+
+export const defaultSettings: Settings = {
+	winByCheckmate: false,
+	allowCastling: true,
+	partialQubitRewards: false,
+	measurePieceCaptures: false,
+	measureKingCaptures: true,
+	allowedMoveDeclarations: {
+		captureOnly: false,
+		noCapture: false,
+		checkOnly: false,
+		noCheck: false,
+		nonLeaping: false,
+	},
+} as const;
