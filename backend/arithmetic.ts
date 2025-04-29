@@ -68,11 +68,6 @@ export default class Fraction {
 		return new Fraction(-fraction.numerator, fraction.denominator);
 	}
 
-	negate(): void {
-		this.numerator *= -1;
-		this.simplify();
-	}
-
 	serialize(): string {
 		return `${this.numerator}/${this.denominator}`;
 	}
