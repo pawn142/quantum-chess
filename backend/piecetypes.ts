@@ -1,5 +1,5 @@
 import Fraction from './arithmetic.ts';
-import { GameData } from './metatypes.ts';
+import { defaultPosition, GameData } from './metatypes.ts';
 
 export const Pieces = {
 	pawn: "pawn",
@@ -28,7 +28,11 @@ export interface Coord {
 }
 
 export function isCoord(candidate: any): candidate is Coord {
-	return ['["x","y"]', '["x","y","promotion"]'].includes(JSON.stringify(Object.keys(candidate))) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
+	try {
+		return ['["x","y"]', '["x","y","promotion"]'].includes(JSON.stringify(Object.keys(candidate))) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
+	} catch {
+		return false;
+	}
 }
 
 export interface WeightedCoord extends Coord {
@@ -134,9 +138,36 @@ export interface ObjectSet {
 	partialPieces: PositionedPiece[];
 }
 
+export interface CompletedSet {
+	pieceType: ColoredPiece;
+	wholePiece: Coord;
+}
+
 export interface ObjectPosition {
 	objects: ObjectSet[];
 	otherData: GameData;
+}
+
+export interface CompletedPosition {
+	pieces: CompletedSet[];
+	otherData?: GameData;
+}
+
+export function completedPositionToObjects(completedPosition: CompletedPosition): ObjectPosition {
+	return {
+		objects: completedPosition.pieces.map(piece => ({
+			pieceType: structuredClone(piece.pieceType),
+			partialPieces: [{
+				position: {
+					x: piece.wholePiece.x,
+					y: piece.wholePiece.y,
+					probability: new Fraction(1, 1),
+				},
+				entangledTo: [],
+			}]
+		})),
+		otherData: structuredClone(completedPosition.otherData ?? defaultPosition.otherData)!,
+	};
 }
 
 export type OptionalPiece = IndexedPiece | undefined;
@@ -180,6 +211,10 @@ export class ChessboardPosition {
 			for (const partialPiece of object.partialPieces) {
 				if (squareArray[coordToIndex(discardProbability(partialPiece.position))]) {
 					throw new Error("Multiple units on the same square in initialization of ChessboardPosition");
+				}
+				const possibleEntanglementsArray: string[] = object.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
+				if (!partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord)))) {
+					throw new Error("Invalid entanglement coordinate in initialization of ChessboardPosition");
 				}
 				squareArray[coordToIndex(discardProbability(partialPiece.position))] = {
 					ofIndex: pieceArray.length,

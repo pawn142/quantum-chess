@@ -1,6 +1,10 @@
 import Fraction from './arithmetic.ts';
 import { chessboard, discardProbability, ChessboardPosition, Coord, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
 
+export function filteredEntries(object: any): [string, any][] {
+	return Object.entries(object).filter((entry: [string, any]) => entry[1]);
+}
+
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 
 export function coordserialize(coordinate: Coord): string {
@@ -80,13 +84,13 @@ export interface GamePosition {
 	otherData: GameData;
 }
 
-export interface CompletedPosition {
+export interface CompletedGamePosition {
 	whitePosition: CompletedHalfPosition;
 	blackPosition: CompletedHalfPosition;
 	otherData?: GameData;
 }
 
-export const defaultPosition: CompletedPosition = {
+export const defaultPosition: CompletedGamePosition = {
 	whitePosition: {
 		p1: { x: 1, y: 2 },
 		p2: { x: 2, y: 2 },
@@ -133,9 +137,9 @@ export const defaultPosition: CompletedPosition = {
 	},
 } as const;
 
-export function completedPositionToPosition(completedPosition: CompletedPosition): GamePosition {
+export function completedPositionToPosition(completedPosition: CompletedGamePosition): GamePosition {
 	return {
-		whitePosition: Object.fromEntries(Object.entries(completedPosition.whitePosition).filter(whiteEntry => whiteEntry[1]).map(([whiteCoordKey, whiteCoord]: [string, Coord]) => [
+		whitePosition: Object.fromEntries(filteredEntries(completedPosition.whitePosition).map(([whiteCoordKey, whiteCoord]: [string, Coord]) => [
 			whiteCoordKey,
 			{
 				positions: [{
@@ -146,7 +150,7 @@ export function completedPositionToPosition(completedPosition: CompletedPosition
 				entanglements: [],
 			},
 		])),
-		blackPosition: Object.fromEntries(Object.entries(completedPosition.blackPosition).filter(blackEntry => blackEntry[1]).map(([blackCoordKey, blackCoord]: [string, Coord]) => [
+		blackPosition: Object.fromEntries(filteredEntries(completedPosition.blackPosition).map(([blackCoordKey, blackCoord]: [string, Coord]) => [
 			blackCoordKey,
 			{
 				positions: [{
@@ -157,13 +161,13 @@ export function completedPositionToPosition(completedPosition: CompletedPosition
 				entanglements: [],
 			},
 		])),
-		otherData: structuredClone(completedPosition.otherData ?? defaultPosition.otherData)!
+		otherData: structuredClone(completedPosition.otherData ?? defaultPosition.otherData)!,
 	};
 }
 
 export function getPositionString(gamePosition: GamePosition): string {
 	let positionString: string = `turn: ${gamePosition.otherData.whoseTurn}, castling: white ${gamePosition.otherData.castling.canWhiteCastle.toString()} black ${gamePosition.otherData.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.otherData.enpassant ? coordserialize(gamePosition.otherData.enpassant) : "false"}`;
-	Object.entries(gamePosition.whitePosition).filter(whiteEntry => whiteEntry[1]).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
+	filteredEntries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
 		let whiteString: string = "";
 		for (const whiteCoord of whitePiece.positions) {
 			whiteString += ` (${coordserialize(whiteCoord)},${whiteCoord.probability.serialize() + (whiteCoord.promotion ? "," + whiteCoord.promotion : "")}),`;
@@ -173,7 +177,7 @@ export function getPositionString(gamePosition: GamePosition): string {
 		}
 		positionString += `|${whiteKey[0]!.toUpperCase() + whiteKey.slice(1)}:${whiteString.slice(0, -1)}`;
 	});
-	Object.entries(gamePosition.blackPosition).filter(blackEntry => blackEntry[1]).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
+	filteredEntries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
 		let blackString: string = "";
 		for (const blackCoord of blackPiece.positions) {
 			blackString += ` (${coordserialize(blackCoord)},${blackCoord.probability.serialize() + (blackCoord.promotion ? "," + blackCoord.promotion : "")}),`;
@@ -256,14 +260,14 @@ export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
 	}
 	return {
 		objects: [
-			...Object.entries(gamePosition.whitePosition).filter(whiteEntry => whiteEntry[1]).map(([whiteKey, whitePiece]: [string, PieceSet]) => ({
+			...filteredEntries(gamePosition.whitePosition).map(([whiteKey, whitePiece]: [string, PieceSet]) => ({
 				pieceType: {
 					name: keyToPiece(whiteKey),
 					side: Sides.white,
 				},
 				partialPieces: pieceSetToPieces(whitePiece),
 			})),
-			...Object.entries(gamePosition.blackPosition).filter(blackEntry => blackEntry[1]).map(([blackKey, blackPiece]: [string, PieceSet]) => ({
+			...filteredEntries(gamePosition.blackPosition).map(([blackKey, blackPiece]: [string, PieceSet]) => ({
 				pieceType: {
 					name: keyToPiece(blackKey),
 					side: Sides.black,
@@ -299,18 +303,18 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 	};
 }
 
-export function isValidPosition(gamePosition: GamePosition): boolean {
+export function ValidPositionCheck(gamePosition: GamePosition): boolean {
 	try {
 		new ChessboardPosition(positionToObjects(gamePosition).objects);
 		const properKeys: string[] = ["", ...Object.keys(defaultPosition.whitePosition)] as const;
 		const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
 		return [...Array(candidateKeys.length).keys()].every(pieceIndex => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1]!)) &&
 		       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
-		       [...Object.entries(gamePosition.whitePosition), ...Object.entries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => JSON.stringify(pieceEntry[1].positions.reduce((accumulator, current) => ({
+		       [...filteredEntries(gamePosition.whitePosition), ...filteredEntries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => pieceEntry[1].positions.reduce((accumulator, current) => ({
 			       x: 1,
 			       y: 1,
 			       probability: Fraction.sum(accumulator.probability, current.probability)
-		       })).probability) === '{"numerator":1,"denominator":1}' && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every(pieceCoord => ![1, 8].includes(pieceCoord.y) || pieceCoord.promotion))) &&
+		       })).probability.lessThanOrEqual(new Fraction(1, 1)) && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every(pieceCoord => ![1, 8].includes(pieceCoord.y) || pieceCoord.promotion))) &&
 		       (!gamePosition.otherData.enpassant || [2, 7].includes((gamePosition.otherData.enpassant as Coord).y) && (gamePosition.otherData.whoseTurn === Sides.white ? Object.entries(gamePosition.blackPosition) : Object.entries(gamePosition.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some(pieceCoord => pieceCoord.x === (gamePosition.otherData.enpassant as Coord).x && [(gamePosition.otherData.enpassant as Coord).y + 2, (gamePosition.otherData.enpassant as Coord).y - 2].includes(pieceCoord.y))));
 	} catch {
 		return false;
@@ -319,13 +323,13 @@ export function isValidPosition(gamePosition: GamePosition): boolean {
 
 export function isValidString(stringCandidate: string): boolean {
 	try {
-		return isValidPosition(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "0|", "9|", ",-"].includes(stringCandidate.slice(index, index + 2)));
+		return ValidPositionCheck(getPositionFromString(stringCandidate)) && getPositionString(getPositionFromString(stringCandidate)) === stringCandidate && [...Array(stringCandidate.length - 4).keys()].every((index: number) => !["Na", "0|", "9|", ",-"].includes(stringCandidate.slice(index, index + 2)));
 	} catch {
 		return false;
 	}
 }
 
-export function isStrictlyValidPosition(positionCandidate: GamePosition): boolean {
+export function isValidPosition(positionCandidate: GamePosition): boolean {
 	try {
 		return isValidString(getPositionString(positionCandidate));
 	} catch {

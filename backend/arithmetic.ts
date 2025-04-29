@@ -2,6 +2,18 @@ export default class Fraction {
 	numerator: number;
 	denominator: number;
 
+	constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
+		if (!denominatorCandidate || isNaN(numeratorCandidate)) {
+			throw new Error("Tried to construct Fraction with a numerator or denominator of NaN or a denominator of 0");
+		}
+		if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate)) {
+			throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
+		}
+		this.numerator = numeratorCandidate;
+		this.denominator = denominatorCandidate;
+		this.simplify();
+	}
+
 	static gcd(a: number, b: number): number {
 		while (b) {
 			[a, b] = [b, a % b];
@@ -17,18 +29,10 @@ export default class Fraction {
 		const commonDivisor: number = Fraction.gcd(this.numerator, this.denominator);
 		this.numerator /= commonDivisor;
 		this.denominator /= commonDivisor;
-	}
-
-	constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
-		if (!denominatorCandidate || !numeratorCandidate) {
-			throw new Error("Tried to construct Fraction with a numerator or denominator of 0 or NaN");
-    	}
-		if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate)) {
-			throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
+		if (this.denominator < 0) {
+			this.numerator *= -1;
+			this.denominator *= -1;
 		}
-		this.numerator = numeratorCandidate;
-		this.denominator = denominatorCandidate;
-		this.simplify();
 	}
 
 	add(other: Fraction): void {
@@ -64,8 +68,21 @@ export default class Fraction {
 		return new Fraction(-fraction.numerator, fraction.denominator);
 	}
 
+	negate(): void {
+		this.numerator *= -1;
+		this.simplify();
+	}
+
 	serialize(): string {
 		return `${this.numerator}/${this.denominator}`;
+	}
+
+	lessThan(other: Fraction): boolean {
+		return Fraction.sum(this, Fraction.negative(other)).numerator < 0;
+	}
+
+	lessThanOrEqual(other: Fraction): boolean {
+		return Fraction.sum(this, Fraction.negative(other)).numerator <= 0;
 	}
 
 	static fractionalClone<T>(object: T): T {
