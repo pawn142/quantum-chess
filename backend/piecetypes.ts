@@ -269,15 +269,15 @@ export class ChessboardPosition {
 		const squareArray: FullBoard = Array(64).fill(undefined) as FullBoard;
 		for (const objectSet of objectPosition) {
 			for (const partialPiece of objectSet.partialPieces) {
-				let thisSquare = squareArray[coordToIndex(discardProbability(partialPiece.position))];
-				if (thisSquare) {
+				const thisSquare = coordToIndex(discardProbability(partialPiece.position));
+				if (squareArray[thisSquare]) {
 					throw new Error("Multiple units on the same square in initialization of ChessboardPosition");
 				}
 				const possibleEntanglementsArray: string[] = objectSet.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
 				if (!partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord)))) {
 					throw new Error("Invalid entanglement to coordinate in initialization of ChessboardPosition");
 				}
-				thisSquare = {
+				squareArray[thisSquare] = {
 					ofIndex: pieceArray.length,
 					entangledTo: structuredClone(partialPiece.entangledTo),
 					promotion: partialPiece.position.promotion,
