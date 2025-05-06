@@ -25,6 +25,7 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
+		"exactOptionalPropertyTypes": false,
 		"rootDir": "./src",
 		"outDir": "./dist",
 		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
