@@ -1,8 +1,8 @@
 import Fraction from './arithmetic.ts';
-import { chessboard, discardProbability, ChessboardPosition, Coord, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
+import { addProbability, areCoordsEqual, chessboard, discardProbability, ChessboardPosition, Coord, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.ts';
 
-export function filteredEntries(object: any): [string, any][] {
-	return Object.entries(object).filter((entry: [string, any]) => entry[1]);
+export function filteredEntries(obj: object): [string, any][] {
+	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined && entry[1] !== null);
 }
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
@@ -72,8 +72,10 @@ export interface CompletedHalfPosition {
 export interface GameData {
 	whoseTurn: keyof typeof Sides;
 	castling: {
-		canWhiteCastle: boolean;
-		canBlackCastle: boolean;
+		canWhiteCastleLeft: boolean;
+		canWhiteCastleRight: boolean;
+		canBlackCastleLeft: boolean;
+		canBlackCastleRight: boolean;
 	};
 	enpassant: Coord | false;
 }
@@ -130,8 +132,10 @@ export const defaultGamePosition: CompletedGamePosition = {
 	otherData: {
 		whoseTurn: Sides.white,
 		castling: {
-			canWhiteCastle: true,
-			canBlackCastle: true,
+			canWhiteCastleLeft: true,
+			canWhiteCastleRight: true,
+			canBlackCastleLeft: true,
+			canBlackCastleRight: true,
 		},
 		enpassant: false,
 	},
@@ -142,22 +146,14 @@ export function completedPositionToPosition(completedPosition: CompletedGamePosi
 		whitePosition: Object.fromEntries(filteredEntries(completedPosition.whitePosition).map(([whiteCoordKey, whiteCoord]: [string, Coord]) => [
 			whiteCoordKey,
 			{
-				positions: [{
-					x: whiteCoord.x,
-					y: whiteCoord.y,
-					probability: new Fraction(1, 1),
-				}],
+				positions: [addProbability(whiteCoord)],
 				entanglements: [],
 			},
 		])),
 		blackPosition: Object.fromEntries(filteredEntries(completedPosition.blackPosition).map(([blackCoordKey, blackCoord]: [string, Coord]) => [
 			blackCoordKey,
 			{
-				positions: [{
-					x: blackCoord.x,
-					y: blackCoord.y,
-					probability: new Fraction(1, 1),
-				}],
+				positions: [addProbability(blackCoord)],
 				entanglements: [],
 			},
 		])),
@@ -166,7 +162,7 @@ export function completedPositionToPosition(completedPosition: CompletedGamePosi
 }
 
 export function getPositionString(gamePosition: GamePosition): string {
-	let positionString: string = `turn: ${gamePosition.otherData.whoseTurn}, castling: white ${gamePosition.otherData.castling.canWhiteCastle.toString()} black ${gamePosition.otherData.castling.canBlackCastle.toString()}, enpassant: ${gamePosition.otherData.enpassant ? coordserialize(gamePosition.otherData.enpassant) : "false"}`;
+	let positionString: string = `turn: ${gamePosition.otherData.whoseTurn}, castling: wl ${gamePosition.otherData.castling.canWhiteCastleLeft.toString()} wr ${gamePosition.otherData.castling.canWhiteCastleRight.toString()} bl ${gamePosition.otherData.castling.canBlackCastleLeft.toString()} br ${gamePosition.otherData.castling.canBlackCastleRight.toString()}, enpassant: ${gamePosition.otherData.enpassant ? coordserialize(gamePosition.otherData.enpassant) : "false"}`;
 	filteredEntries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
 		let whiteString: string = "";
 		for (const whiteCoord of whitePiece.positions) {
@@ -207,7 +203,7 @@ export function getPositionFromString(positionString: string): GamePosition {
 					probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
 				});
 			} else {
-				entanglementArray.push(new PieceEntanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!.slice(0, -1))));
+				entanglementArray.push(new PieceEntanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!.slice(0, -1)), positionArray));
 			}
 		}
 		(pieceString[0] === pieceString[0]!.toLowerCase() ? blackPositionArray : whitePositionArray).push([pieceString.slice(0, 2).toLowerCase(), {
@@ -221,12 +217,14 @@ export function getPositionFromString(positionString: string): GamePosition {
 		otherData: {
 			whoseTurn: Sides[metadata[1]!.slice(0, -1) as keyof typeof Sides],
 			castling: {
-				canWhiteCastle: JSON.parse(metadata[4]!),
-				canBlackCastle: JSON.parse(metadata[6]!.slice(0, -1)),
+				canWhiteCastleLeft: JSON.parse(metadata[4]!),
+				canWhiteCastleRight: JSON.parse(metadata[6]!),
+				canBlackCastleLeft: JSON.parse(metadata[8]!),
+				canBlackCastleRight: JSON.parse(metadata[10]!.slice(0, -1)),
 			},
-			enpassant: metadata[8] === "false" ? false : {
-				x: boardFiles.indexOf(metadata[8]![0]!) + 1 as PartialCoord,
-				y: parseInt(metadata[8]![1]!) as PartialCoord,
+			enpassant: metadata[12] === "false" ? false : {
+				x: boardFiles.indexOf(metadata[12]![0]!) + 1 as PartialCoord,
+				y: parseInt(metadata[12]![1]!) as PartialCoord,
 			},
 		},
 	};
@@ -262,14 +260,14 @@ export function positionToObjects(gamePosition: GamePosition): ObjectPosition {
 		objects: [
 			...filteredEntries(gamePosition.whitePosition).map(([whiteKey, whitePiece]: [string, PieceSet]) => ({
 				pieceType: {
-					name: keyToPiece(whiteKey),
+					type_p: keyToPiece(whiteKey),
 					side: Sides.white,
 				},
 				partialPieces: pieceSetToPieces(whitePiece),
 			})),
 			...filteredEntries(gamePosition.blackPosition).map(([blackKey, blackPiece]: [string, PieceSet]) => ({
 				pieceType: {
-					name: keyToPiece(blackKey),
+					type_p: keyToPiece(blackKey),
 					side: Sides.black,
 				},
 				partialPieces: pieceSetToPieces(blackPiece),
@@ -287,17 +285,17 @@ export function objectsToPosition(objectPosition: ObjectPosition): GamePosition 
 		const coordinates: WeightedCoord[] = pieces.map(piece => piece.position);
 		return {
 			positions: pieces.map(piece => Fraction.fractionalClone(piece.position)),
-			entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new PieceEntanglement(pieces.indexOf(piece), pieces.findIndex(candidate => candidate.position.x === pieceCoord.x && candidate.position.y === pieceCoord.y), coordinates))),
+			entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new PieceEntanglement(pieces.indexOf(piece), pieces.findIndex(candidate => areCoordsEqual(candidate.position, pieceCoord)), coordinates))),
 		};
 	}
 	return {
 		whitePosition: Object.fromEntries(Object.keys(defaultGamePosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.white && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(objectSet => objectSet.pieceType.side === Sides.white && objectSet.pieceType.type_p === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
 		blackPosition: Object.fromEntries(Object.keys(defaultGamePosition.whitePosition).map(pieceKey => [
 			pieceKey,
-			piecesToPieceSet(objectPosition.objects.filter(object => object.pieceType.side === Sides.black && object.pieceType.name === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
+			piecesToPieceSet(objectPosition.objects.filter(objectSet => objectSet.pieceType.side === Sides.black && objectSet.pieceType.type_p === keyToPiece(pieceKey))[parseInt(pieceKey[1]!) - 1]?.partialPieces),
 		])),
 		otherData: structuredClone(objectPosition.otherData),
 	};
@@ -314,8 +312,12 @@ export function ValidPositionCheck(gamePosition: GamePosition): boolean {
 			       x: 1,
 			       y: 1,
 			       probability: Fraction.sum(accumulator.probability, current.probability)
-		       })).probability.lessThanOrEqual(new Fraction(1, 1)) && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every(pieceCoord => ![1, 8].includes(pieceCoord.y) || pieceCoord.promotion))) &&
-		       (!gamePosition.otherData.enpassant || [2, 7].includes((gamePosition.otherData.enpassant as Coord).y) && (gamePosition.otherData.whoseTurn === Sides.white ? Object.entries(gamePosition.blackPosition) : Object.entries(gamePosition.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some(pieceCoord => pieceCoord.x === (gamePosition.otherData.enpassant as Coord).x && [(gamePosition.otherData.enpassant as Coord).y + 2, (gamePosition.otherData.enpassant as Coord).y - 2].includes(pieceCoord.y))));
+		       })).probability.lessThanOrEqual(new Fraction) && (pieceEntry[0][0] !== "p" || pieceEntry[1].positions.every(pieceCoord => (![1, 8].includes(pieceCoord.y) || pieceCoord.promotion) && ([Pieces.knight, Pieces.bishop, Pieces.rook, Pieces.queen, undefined] as any[]).includes(pieceCoord.promotion))) && (pieceEntry[0][0] === "p" || pieceEntry[1].positions.every(pieceCoord => !pieceCoord.promotion))) &&
+		       (!gamePosition.otherData.enpassant || [4, 5].includes((gamePosition.otherData.enpassant as Coord).y) && (gamePosition.otherData.whoseTurn === Sides.white ? filteredEntries(gamePosition.blackPosition) : filteredEntries(gamePosition.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].positions.some(pieceCoord => !pieceCoord.promotion && areCoordsEqual(gamePosition.otherData.enpassant as Coord, pieceCoord)))) &&
+			   (!gamePosition.otherData.castling.canWhiteCastleLeft  || JSON.stringify(gamePosition.whitePosition.k1!.positions[0]) === '{"x":5,"y":1,"probability":{"numerator":1,"denominator":1}}' && JSON.stringify(gamePosition.whitePosition.r1?.positions[0]) === '{"x":1,"y":1,"probability":{"numerator":1,"denominator":1}}') &&
+			   (!gamePosition.otherData.castling.canWhiteCastleRight || JSON.stringify(gamePosition.whitePosition.k1!.positions[0]) === '{"x":5,"y":1,"probability":{"numerator":1,"denominator":1}}' && JSON.stringify(gamePosition.whitePosition.r2?.positions[0]) === '{"x":8,"y":1,"probability":{"numerator":1,"denominator":1}}') &&
+			   (!gamePosition.otherData.castling.canBlackCastleLeft  || JSON.stringify(gamePosition.blackPosition.k1!.positions[0]) === '{"x":5,"y":8,"probability":{"numerator":1,"denominator":1}}' && JSON.stringify(gamePosition.blackPosition.r1?.positions[0]) === '{"x":1,"y":8,"probability":{"numerator":1,"denominator":1}}') &&
+			   (!gamePosition.otherData.castling.canBlackCastleRight || JSON.stringify(gamePosition.blackPosition.k1!.positions[0]) === '{"x":5,"y":8,"probability":{"numerator":1,"denominator":1}}' && JSON.stringify(gamePosition.blackPosition.r2?.positions[0]) === '{"x":8,"y":8,"probability":{"numerator":1,"denominator":1}}');
 	} catch {
 		return false;
 	}
@@ -340,9 +342,12 @@ export function isValidPosition(positionCandidate: GamePosition): boolean {
 export interface Settings {
 	winByCheckmate: boolean;
 	allowCastling: boolean;
-	partialQubitRewards: boolean;
+	castleSplitting: boolean;
+	pawnDoubleMoveSplitting: boolean;
 	measurePieceCaptures: boolean;
 	measureKingCaptures: boolean;
+	partialQubitRewards: boolean;
+	advancedQubitMode: boolean;
 	allowedMoveDeclarations: {
 		captureOnly: boolean;
 		noCapture: boolean;
@@ -355,9 +360,12 @@ export interface Settings {
 export const defaultSettings: Settings = {
 	winByCheckmate: false,
 	allowCastling: true,
-	partialQubitRewards: false,
+	castleSplitting: false,
+	pawnDoubleMoveSplitting: false,
 	measurePieceCaptures: false,
 	measureKingCaptures: true,
+	partialQubitRewards: false,
+	advancedQubitMode: false,
 	allowedMoveDeclarations: {
 		captureOnly: false,
 		noCapture: false,

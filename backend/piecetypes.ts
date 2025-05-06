@@ -1,5 +1,9 @@
 import Fraction from './arithmetic.ts';
-import { GameData } from './metatypes.ts';
+import { defaultGamePosition, GameData } from './metatypes.ts';
+
+function isObject(candidate: any): boolean {
+	return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
+}
 
 export const Pieces = {
 	pawn: "pawn",
@@ -15,6 +19,10 @@ export const Sides = {
 	black: "black",
 } as const;
 
+export function otherSide(side: keyof typeof Sides): keyof typeof Sides {
+	return side === Sides.white ? Sides.black : Sides.white;
+}
+
 export type PartialCoord = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export function isPartialCoord(candidate: number): candidate is PartialCoord {
@@ -28,18 +36,22 @@ export interface Coord {
 }
 
 export function isCoord(candidate: any): candidate is Coord {
-	try {
+	if (isObject(candidate)) {
 		return ['["x","y"]', '["x","y","promotion"]'].includes(JSON.stringify(Object.keys(candidate))) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
-	} catch {
+	} else {
 		return false;
 	}
+}
+
+export function areCoordsEqual(coordOne: Coord, coordTwo: Coord): boolean {
+	return coordOne.x === coordTwo.x && coordOne.y === coordTwo.y;
 }
 
 export interface WeightedCoord extends Coord {
 	probability: Fraction;
 }
 
-export function discardProbability(coordinate: Coord | WeightedCoord): Coord {
+export function discardProbability(coordinate: WeightedCoord): Coord {
 	const copy: any = {
 		x: coordinate.x,
 		y: coordinate.y,
@@ -47,6 +59,12 @@ export function discardProbability(coordinate: Coord | WeightedCoord): Coord {
 	if ("promotion" in coordinate) {
 		copy.promotion = coordinate.promotion;
 	}
+	return copy;
+}
+
+export function addProbability(coordinate: Coord): WeightedCoord {
+	const copy: any = structuredClone(coordinate);
+	copy.probability = new Fraction;
 	return copy;
 }
 
@@ -118,7 +136,7 @@ export const chessboard: Coord[] = [
 ] as const;
 
 export interface ColoredPiece {
-	name: keyof typeof Pieces;
+	type_p: keyof typeof Pieces;
 	side: keyof typeof Sides;
 }
 
@@ -140,7 +158,11 @@ export interface ObjectSet {
 
 export interface CompletedSet {
 	pieceType: ColoredPiece;
-	wholePiece: Coord;
+	position: Coord;
+}
+
+export function actualType(completedPiece: CompletedSet): keyof typeof Pieces {
+	return completedPiece.position.promotion ?? completedPiece.pieceType.type_p;
 }
 
 export interface ObjectPosition {
@@ -153,61 +175,54 @@ export interface CompletedPosition {
 	otherData?: GameData;
 }
 
+export function getPiece(completedPosition: CompletedPosition, coordinate: Coord): CompletedSet | undefined {
+	return completedPosition.pieces.find(completedPiece => areCoordsEqual(completedPiece.position, coordinate));
+}
+
 export const defaultPosition: CompletedPosition = {
 	pieces: [
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 1, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 2, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 3, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 4, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 5, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 6, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 7, y: 2 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.white }, wholePiece: { x: 8, y: 2 } },
-		{ pieceType: { name: Pieces.rook,   side: Sides.white }, wholePiece: { x: 1, y: 1 } },
-		{ pieceType: { name: Pieces.knight, side: Sides.white }, wholePiece: { x: 2, y: 1 } },
-		{ pieceType: { name: Pieces.bishop, side: Sides.white }, wholePiece: { x: 3, y: 1 } },
-		{ pieceType: { name: Pieces.queen,  side: Sides.white }, wholePiece: { x: 4, y: 1 } },
-		{ pieceType: { name: Pieces.king,   side: Sides.white }, wholePiece: { x: 5, y: 1 } },
-		{ pieceType: { name: Pieces.bishop, side: Sides.white }, wholePiece: { x: 6, y: 1 } },
-		{ pieceType: { name: Pieces.knight, side: Sides.white }, wholePiece: { x: 7, y: 1 } },
-		{ pieceType: { name: Pieces.rook,   side: Sides.white }, wholePiece: { x: 8, y: 1 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 1, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 2, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 3, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 4, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 5, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 6, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 7, y: 7 } },
-		{ pieceType: { name: Pieces.pawn,   side: Sides.black }, wholePiece: { x: 8, y: 7 } },
-		{ pieceType: { name: Pieces.rook,   side: Sides.black }, wholePiece: { x: 1, y: 8 } },
-		{ pieceType: { name: Pieces.knight, side: Sides.black }, wholePiece: { x: 2, y: 8 } },
-		{ pieceType: { name: Pieces.bishop, side: Sides.black }, wholePiece: { x: 3, y: 8 } },
-		{ pieceType: { name: Pieces.queen,  side: Sides.black }, wholePiece: { x: 4, y: 8 } },
-		{ pieceType: { name: Pieces.king,   side: Sides.black }, wholePiece: { x: 5, y: 8 } },
-		{ pieceType: { name: Pieces.bishop, side: Sides.black }, wholePiece: { x: 6, y: 8 } },
-		{ pieceType: { name: Pieces.knight, side: Sides.black }, wholePiece: { x: 7, y: 8 } },
-		{ pieceType: { name: Pieces.rook,   side: Sides.black }, wholePiece: { x: 8, y: 8 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 1, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 2, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 3, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 4, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 5, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 6, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 7, y: 2 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.white }, position: { x: 8, y: 2 } },
+		{ pieceType: { type_p: Pieces.rook,   side: Sides.white }, position: { x: 1, y: 1 } },
+		{ pieceType: { type_p: Pieces.knight, side: Sides.white }, position: { x: 2, y: 1 } },
+		{ pieceType: { type_p: Pieces.bishop, side: Sides.white }, position: { x: 3, y: 1 } },
+		{ pieceType: { type_p: Pieces.queen,  side: Sides.white }, position: { x: 4, y: 1 } },
+		{ pieceType: { type_p: Pieces.king,   side: Sides.white }, position: { x: 5, y: 1 } },
+		{ pieceType: { type_p: Pieces.bishop, side: Sides.white }, position: { x: 6, y: 1 } },
+		{ pieceType: { type_p: Pieces.knight, side: Sides.white }, position: { x: 7, y: 1 } },
+		{ pieceType: { type_p: Pieces.rook,   side: Sides.white }, position: { x: 8, y: 1 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 1, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 2, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 3, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 4, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 5, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 6, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 7, y: 7 } },
+		{ pieceType: { type_p: Pieces.pawn,   side: Sides.black }, position: { x: 8, y: 7 } },
+		{ pieceType: { type_p: Pieces.rook,   side: Sides.black }, position: { x: 1, y: 8 } },
+		{ pieceType: { type_p: Pieces.knight, side: Sides.black }, position: { x: 2, y: 8 } },
+		{ pieceType: { type_p: Pieces.bishop, side: Sides.black }, position: { x: 3, y: 8 } },
+		{ pieceType: { type_p: Pieces.queen,  side: Sides.black }, position: { x: 4, y: 8 } },
+		{ pieceType: { type_p: Pieces.king,   side: Sides.black }, position: { x: 5, y: 8 } },
+		{ pieceType: { type_p: Pieces.bishop, side: Sides.black }, position: { x: 6, y: 8 } },
+		{ pieceType: { type_p: Pieces.knight, side: Sides.black }, position: { x: 7, y: 8 } },
+		{ pieceType: { type_p: Pieces.rook,   side: Sides.black }, position: { x: 8, y: 8 } },
 	],
-	otherData: {
-		whoseTurn: Sides.white,
-		castling: {
-			canWhiteCastle: true,
-			canBlackCastle: true,
-		},
-		enpassant: false,
-	},
+	otherData: defaultGamePosition.otherData!,
 } as const;
 
 export function completedPositionToObjects(completedPosition: CompletedPosition): ObjectPosition {
 	return {
-		objects: completedPosition.pieces.map(piece => ({
-			pieceType: structuredClone(piece.pieceType),
+		objects: completedPosition.pieces.map(completedPiece => ({
+			pieceType: structuredClone(completedPiece.pieceType),
 			partialPieces: [{
-				position: {
-					x: piece.wholePiece.x,
-					y: piece.wholePiece.y,
-					probability: new Fraction(1, 1),
-				},
+				position: addProbability(completedPiece.position),
 				entangledTo: [],
 			}]
 		})),
@@ -252,34 +267,92 @@ export class ChessboardPosition {
 	constructor(objectPosition: ObjectSet[]) {
 		const pieceArray: ColoredPiece[] = [];
 		const squareArray: FullBoard = Array(64).fill(undefined) as FullBoard;
-		for (const object of objectPosition) {
-			for (const partialPiece of object.partialPieces) {
-				if (squareArray[coordToIndex(discardProbability(partialPiece.position))]) {
+		for (const objectSet of objectPosition) {
+			for (const partialPiece of objectSet.partialPieces) {
+				let thisSquare = squareArray[coordToIndex(discardProbability(partialPiece.position))];
+				if (thisSquare) {
 					throw new Error("Multiple units on the same square in initialization of ChessboardPosition");
 				}
-				const possibleEntanglementsArray: string[] = object.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
+				const possibleEntanglementsArray: string[] = objectSet.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
 				if (!partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord)))) {
-					throw new Error("Invalid entanglement coordinate in initialization of ChessboardPosition");
+					throw new Error("Invalid entanglement to coordinate in initialization of ChessboardPosition");
 				}
-				squareArray[coordToIndex(discardProbability(partialPiece.position))] = {
+				thisSquare = {
 					ofIndex: pieceArray.length,
 					entangledTo: structuredClone(partialPiece.entangledTo),
 					promotion: partialPiece.position.promotion,
 				};
 			}
-			pieceArray.push(structuredClone(object.pieceType));
+			pieceArray.push(structuredClone(objectSet.pieceType));
 		}
 		this.fullPieces = pieceArray;
 		this.squares = squareArray;
 	}
 }
 
-export interface Move {
+export interface StandardMove {
 	start: Coord;
 	end: Coord;
 }
 
-export interface PieceMove {
-	piece: keyof typeof Pieces;
+export function isStandardMove(candidate: any): candidate is StandardMove {
+	if (isObject(candidate)) {
+		return JSON.stringify(Object.keys(candidate)) === '["start","end"]' && isCoord(candidate.start) && isCoord(candidate.end);
+	} else {
+		return false;
+	}
+}
+export interface CastleMove {
+	side: keyof typeof Sides;
+	direction: -1 | 1;
+}
+
+export interface Enpassant {
+	attackingPawn: Coord;
+	captureSquare: Coord;
+}
+
+export interface PawnDoubleMove {
+	chosenPawn: Coord;
+}
+
+export type SpecialMove = CastleMove | Enpassant | PawnDoubleMove;
+
+export const SpecialMoves = {
+	castle: "castle",
+	enpassant: "enpassant",
+	pawnDoubleMove: "pawnDoubleMove",
+} as const;
+
+export function getTypeOfMove(move: object): keyof typeof SpecialMoves | false {
+	switch (JSON.stringify(Object.keys(move))) {
+		case '["side","direction"]':
+			return SpecialMoves.castle;
+		case '["attackingPawn","captureSquare"]':
+			return SpecialMoves.enpassant;
+		case '["chosenPawn"]':
+			return SpecialMoves.pawnDoubleMove;
+		default:
+			return false;
+	}
+}
+
+export type Move = StandardMove | SpecialMove;
+
+export const MoveDeclarations = {
+	captureOnly: "captureOnly",
+	noCapture: "noCapture",
+	checkOnly: "checkOnly",
+	noCheck: "noCheck",
+	nonLeaping: "nonLeaping",
+} as const;
+
+export interface DeclaredMove {
 	move: Move;
+	declarations: (keyof typeof MoveDeclarations)[];
+}
+
+export interface Play {
+	pieceIndex: number;
+	moves: DeclaredMove[];
 }

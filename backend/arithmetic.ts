@@ -2,7 +2,7 @@ export default class Fraction {
 	numerator: number;
 	denominator: number;
 
-	constructor(numeratorCandidate: number, denominatorCandidate: number = 1) {
+	constructor(numeratorCandidate: number = 1, denominatorCandidate: number = 1) {
 		if (!denominatorCandidate || isNaN(numeratorCandidate)) {
 			throw new Error("Tried to construct Fraction with a numerator or denominator of NaN or a denominator of 0");
 		}
@@ -80,13 +80,13 @@ export default class Fraction {
 		return Fraction.sum(this, Fraction.negative(other)).numerator <= 0;
 	}
 
-	static fractionalClone<T>(object: T): T {
+	static fractionalClone<T>(object: T & object): T & object {
 		if (object instanceof Fraction) {
-			return new Fraction(object.numerator, object.denominator) as T;
+			return new Fraction(object.numerator, object.denominator) as unknown as T & object;
 		} else if (Array.isArray(object)) {
-			return object.map(element => Fraction.fractionalClone(element)) as T;
+			return object.map(element => Fraction.fractionalClone(element)) as unknown as T & object;
 		} else if (typeof object === "object" && object !== null) {
-			return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as T;
+			return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as unknown as T & object;
 		} else {
 			return object;
 		}

@@ -39,6 +39,7 @@ export default [
 			"no-empty": "off",
 			"no-prototype-builtins": "off",
 			// "no-multi-spaces": "error",
+			"no-case-declarations": "warn",
 			"max-lines": ["warn", 10000],
 			"complexity": ["warn", { "max": 64 }]
 		},

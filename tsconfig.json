@@ -13,6 +13,7 @@
 		"lib": ["ESNext"],
 		"incremental": true,
 		"noErrorTruncation": true,
+		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
 		"noImplicitOverride": true,
 		"noImplicitReturns": true,
