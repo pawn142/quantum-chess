@@ -29,10 +29,10 @@
 		"skipLibCheck": true,
 		"sourceMap": false,
 		"strict": true,
-		"rootDir": "./src",
-		"outDir": "./dist",
-		"tsBuildInfoFile": "./dist/buildinfo"
+		"rootDir": "src",
+		"outDir": "dist",
+		"tsBuildInfoFile": "dist/buildinfo"
 	},
-	"include": [ "./src/**/*" ],
+	"include": [ "src/" ],
 	"exclude": []
 }
