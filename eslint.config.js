@@ -1,15 +1,17 @@
 import pluginJs from "@eslint/js";
 // import pluginTypescript from "@typescript-eslint/eslint-plugin";
 import parserTypescript from "@typescript-eslint/parser";
+import globalIgnores from "eslint/config";
 
 export default [
 	pluginJs.configs.recommended,
+	globalIgnores(["./dist"]),
 	{
 		files: [ "**/*.js", "**/*.ts" ],
 		// plugins: { "@typescript-eslint": pluginTypescript },
-		// ignores: ["dist/"],
+		ignores: ["dist/"],
 		rules: {
-			"no-undef": "error",
+			"no-undef": "off",
 			"no-unused-vars": "warn",
 			"use-isnan": "error",
 			"semi": ["error", "always"],
@@ -50,12 +52,5 @@ export default [
 				NodeJS: "readonly",
 			}
 		}
-	},
-	{
-		files: [ "**/*.ts" ],
-		rules: {
-			"dot-notation": "off", 
-			"no-undef": "off"
-		},
 	},
 ];
