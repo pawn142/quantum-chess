@@ -8,7 +8,6 @@ export default [
 	globalIgnores([ "./dist/**/*" ]),
 	{
 		files: [ "**/*.js", "**/*.ts" ],
-		// plugins: { "@typescript-eslint": pluginTypescript },
 		rules: {
 			"no-undef": "off",
 			"no-unused-vars": "warn",
