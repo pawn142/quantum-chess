@@ -179,6 +179,7 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	}
 	const result: CompletedPosition = getResultOfMove(declaredMove.move, completedPos);
 	let current: boolean = movedPiece.pieceType.side === data.whoseTurn &&
+	                       !isEndpointBlocked(declaredMove.move, completedPos) &&
 	                       !(winByCheckmate && isInCheck(data.whoseTurn, result)) &&
 	                       !(declaredMove.declarations.includes(MoveDeclarations.nonLeaping) && isBlocked(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.includes(MoveDeclarations.noCapture) && isCapture(declaredMove.move, completedPos)) &&

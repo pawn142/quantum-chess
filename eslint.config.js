@@ -1,7 +1,7 @@
 import pluginJs from "@eslint/js";
 // import pluginTypescript from "@typescript-eslint/eslint-plugin";
 import parserTypescript from "@typescript-eslint/parser";
-import globalIgnores from "eslint/config";
+import globalIgnores from "@eslint/config";
 
 export default [
 	pluginJs.configs.recommended,
@@ -9,7 +9,6 @@ export default [
 	{
 		files: [ "**/*.js", "**/*.ts" ],
 		// plugins: { "@typescript-eslint": pluginTypescript },
-		ignores: ["dist/"],
 		rules: {
 			"no-undef": "off",
 			"no-unused-vars": "warn",

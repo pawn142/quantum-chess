@@ -1,14 +1,12 @@
+import { assert } from "console";
+
 export default class Fraction {
 	numerator: number;
 	denominator: number;
 
 	constructor(numeratorCandidate: number = 1, denominatorCandidate: number = 1) {
-		if (!denominatorCandidate || isNaN(numeratorCandidate)) {
-			throw new Error("Tried to construct Fraction with a numerator or denominator of NaN or a denominator of 0");
-		}
-		if (!Number.isInteger(numeratorCandidate) || !Number.isInteger(denominatorCandidate)) {
-			throw new Error("Tried to construct Fraction with a non-integer numerator or denominator");
-		}
+		assert(denominatorCandidate || !isNaN(numeratorCandidate), "Tried to construct Fraction with a numerator or denominator of NaN or a denominator of 0");
+		assert(Number.isInteger(numeratorCandidate) && Number.isInteger(denominatorCandidate), "Tried to construct Fraction with a non-integer numerator or denominator");
 		this.numerator = numeratorCandidate;
 		this.denominator = denominatorCandidate;
 		this.simplify();
