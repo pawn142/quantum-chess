@@ -1,5 +1,4 @@
 import pluginJs from "@eslint/js";
-// import pluginTypescript from "@typescript-eslint/eslint-plugin";
 import parserTypescript from "@typescript-eslint/parser";
 import globalIgnores from "eslint/config";
 
