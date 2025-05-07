@@ -1,4 +1,5 @@
 import Fraction from './arithmetic.js';
+import assert from 'assert';
 import { addProbability, areCoordsEqual, chessboard, defaultPosition, discardProbability, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.js';
 
 export function filteredEntries(obj: object): [string, any][] {
@@ -15,12 +16,8 @@ export class PieceEntanglement {
 	from: number;
 	to: number;
 	constructor(fromCandidate: number, toCandidate: number, positionList: Coord[] | WeightedCoord[] = chessboard) {
-		if (!Number.isInteger(fromCandidate) || !Number.isInteger(toCandidate)) {
-			throw new Error("Tried to initialize PieceEntanglement with a non-integer from index or to index");
-		}
-		if (!(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length)) {
-			throw new Error("Tried to initialize PieceEntanglement with a from index or to index that is out of bounds");
-		}
+		assert(Number.isInteger(fromCandidate) && Number.isInteger(toCandidate), "Tried to initialize PieceEntanglement with a non-integer from index or to index");
+		assert(0 <= fromCandidate && fromCandidate < positionList.length && 0 <= toCandidate && toCandidate < positionList.length, "Tried to initialize PieceEntanglement with a from index or to index that is out of bounds");
 		this.from = fromCandidate;
 		this.to = toCandidate;
 	}

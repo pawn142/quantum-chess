@@ -31,8 +31,8 @@
 		"strict": true,
 		"rootDir": "./src",
 		"outDir": "./dist",
-		"tsBuildInfoFile": "./dist/tsbuildinfo"
+		"tsBuildInfoFile": "./dist/buildinfo"
 	},
-	"include": [ "./src" ],
+	"include": [ "./src/**/*" ],
 	"exclude": []
 }

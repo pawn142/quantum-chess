@@ -1,4 +1,5 @@
 import Fraction from './arithmetic.js';
+import assert from 'assert';
 
 export interface GameData {
 	whoseTurn: keyof typeof Sides;
@@ -262,22 +263,16 @@ export type FullBoard = [OptionalPiece, OptionalPiece, OptionalPiece, OptionalPi
                         ];
 
 export function coordToIndex(coordinate: Coord): number {
-	if (isCoord(coordinate)) {
-		return 63 + coordinate.x - 8 * coordinate.y;
-	} else {
-		throw new Error("Invalid coordinate passed into 'coordToIndex'");
-	}
+	assert(isCoord(coordinate), "Invalid coordinate passed into 'coordToIndex'");
+	return 63 + coordinate.x - 8 * coordinate.y;
 }
 
 export function indexToCoord(index: number): Coord {
-	if (Number.isInteger(index) && 0 <= index && index < 64) {
-		return {
-			x: index % 8 + 1 as PartialCoord,
-			y: 8 - Math.floor(index / 8) as PartialCoord,
-		};
-	} else {
-		throw new Error("Invalid index passed into 'indexToCoord'");
-	}
+	assert(Number.isInteger(index) && 0 <= index && index < 64, "Invalid index passed into 'indexToCoord'");
+	return {
+		x: index % 8 + 1 as PartialCoord,
+		y: 8 - Math.floor(index / 8) as PartialCoord,
+	};
 }
 
 export class ChessboardPosition {
@@ -289,13 +284,9 @@ export class ChessboardPosition {
 		for (const objectSet of objectPosition) {
 			for (const partialPiece of objectSet.partialPieces) {
 				const thisSquare = coordToIndex(discardProbability(partialPiece.position));
-				if (squareArray[thisSquare]) {
-					throw new Error("Multiple units on the same square in initialization of ChessboardPosition");
-				}
 				const possibleEntanglementsArray: string[] = objectSet.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
-				if (!partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord)))) {
-					throw new Error("Invalid entanglement to coordinate in initialization of ChessboardPosition");
-				}
+				assert(squareArray[thisSquare] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
+				assert(partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord))), "Invalid entanglement to coordinate in initialization of ChessboardPosition");
 				squareArray[thisSquare] = {
 					ofIndex: pieceArray.length,
 					entangledTo: structuredClone(partialPiece.entangledTo),
