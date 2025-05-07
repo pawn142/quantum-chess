@@ -1,6 +1,6 @@
-import assert from 'assert';
-import { actualType, areCoordsEqual, getPiece, getTypeOfMove, isStandardMove, otherSide, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, /*ObjectPosition,*/ PartialCoord, PawnDoubleMove, Pieces, /*Play,*/ Sides, SpecialMoves, StandardMove} from './piecetypes.js';
-import { /*Settings*/ } from './metatypes.js';
+import assert from "assert";
+import { actualType, areCoordsEqual, getPiece, getTypeOfMove, isStandardMove, otherSide, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, /*ObjectPosition,*/ PartialCoord, PawnDoubleMove, Pieces, /*Play,*/ Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
+import { /*Settings*/ } from "./metatypes.js";
 
 export function isInRange(move: StandardMove, piece: CompletedSet | keyof typeof Pieces, side: keyof typeof Sides = (piece as CompletedSet).pieceType.side ?? Sides.white): boolean {
 	if (areCoordsEqual(move.start, move.end)) {

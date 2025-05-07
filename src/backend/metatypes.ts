@@ -1,6 +1,6 @@
-import Fraction from './arithmetic.js';
-import assert from 'assert';
-import { addProbability, areCoordsEqual, chessboard, defaultPosition, discardProbability, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from './piecetypes.js';
+import Fraction from "./arithmetic.js";
+import assert from "assert";
+import { addProbability, areCoordsEqual, chessboard, defaultPosition, discardProbability, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {
 	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined && entry[1] !== null);

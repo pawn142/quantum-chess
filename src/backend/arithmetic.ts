@@ -1,4 +1,4 @@
-import { assert } from "console";
+import assert from "assert";
 
 export default class Fraction {
 	numerator: number;
