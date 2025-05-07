@@ -5,8 +5,8 @@ export default class Fraction {
 	denominator: number;
 
 	constructor(numeratorCandidate: number = 1, denominatorCandidate: number = 1) {
-		assert(denominatorCandidate || !isNaN(numeratorCandidate), "Tried to construct Fraction with a numerator or denominator of NaN or a denominator of 0");
 		assert(Number.isInteger(numeratorCandidate) && Number.isInteger(denominatorCandidate), "Tried to construct Fraction with a non-integer numerator or denominator");
+		assert(denominatorCandidate, "Tried to construct Fraction with a denominator of 0");
 		this.numerator = numeratorCandidate;
 		this.denominator = denominatorCandidate;
 		this.simplify();
