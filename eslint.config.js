@@ -4,7 +4,7 @@ import globalIgnores from "eslint/config";
 
 export default [
 	pluginJs.configs.recommended,
-	globalIgnores([ "dist/" ]),
+	globalIgnores([ "./dist/" ]),
 	{
 		files: [ "**/*.js", "**/*.ts" ],
 		rules: {

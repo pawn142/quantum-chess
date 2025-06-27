@@ -23,7 +23,7 @@ export default class Fraction {
 		return (a * b) / Fraction.gcd(a, b);
 	}
 
-	simplify(): void {
+	simplify(): Fraction {
 		const commonDivisor: number = Fraction.gcd(this.numerator, this.denominator);
 		this.numerator /= commonDivisor;
 		this.denominator /= commonDivisor;
@@ -31,31 +31,46 @@ export default class Fraction {
 			this.numerator *= -1;
 			this.denominator *= -1;
 		}
+		return this;
 	}
 
-	add(other: Fraction): void {
+	add(other: Fraction): Fraction {
 		const commonMultiple: number = Fraction.lcm(this.denominator, other.denominator);
 		this.numerator = (this.numerator * (commonMultiple / this.denominator)) + (other.numerator * (commonMultiple / other.denominator));
 		this.denominator = commonMultiple;
-		this.simplify();
+		return this.simplify();
 	}
 
-	multiply(other: Fraction): void {
+	multiply(other: Fraction): Fraction {
 		this.numerator *= other.numerator;
 		this.denominator *= other.denominator;
-		this.simplify();
+		return this.simplify();
 	}
 
-	static sum(fracOne: Fraction, fracTwo: Fraction): Fraction {
-		const temp: Fraction = new Fraction(fracOne.numerator, fracOne.denominator);
-		temp.add(fracTwo);
-		return temp;
+	static sum(...summands: Fraction[]): Fraction {
+		switch (summands.length) {
+			case 0:
+				return new Fraction(0);
+			case 1:
+				return new Fraction(summands[0]!.numerator, summands[0]!.denominator);
+			case 2:
+				return new Fraction(summands[0]!.numerator, summands[0]!.denominator).add(summands[1]!);
+			default:
+				return Fraction.sum(summands[0]!, Fraction.sum(...summands.slice(1)));
+		}
 	}
 
-	static product(fracOne: Fraction, fracTwo: Fraction): Fraction {
-		const temp: Fraction = new Fraction(fracOne.numerator, fracOne.denominator);
-		temp.multiply(fracTwo);
-		return temp;
+	static product(...factors: Fraction[]): Fraction {
+		switch (factors.length) {
+			case 0:
+				return new Fraction;
+			case 1:
+				return new Fraction(factors[0]!.numerator, factors[0]!.denominator);
+			case 2:
+				return new Fraction(factors[0]!.numerator, factors[0]!.denominator).multiply(factors[1]!);
+			default:
+				return Fraction.product(factors[0]!, Fraction.product(...factors.slice(1)));
+		}
 	}
 
 	static reciprocal(fraction: Fraction): Fraction {
@@ -66,27 +81,47 @@ export default class Fraction {
 		return new Fraction(-fraction.numerator, fraction.denominator);
 	}
 
+	static difference(fractionOne: Fraction, fractionTwo: Fraction): Fraction {
+		return Fraction.sum(fractionOne, Fraction.negative(fractionTwo));
+	}
+
+	static quotient(fractionOne: Fraction, fractionTwo: Fraction): Fraction {
+		return Fraction.product(fractionOne, Fraction.reciprocal(fractionTwo));
+	}
+
+	subtract(other: Fraction): Fraction {
+		return this.add(Fraction.negative(other));
+	}
+
+	divide(other: Fraction): Fraction {
+		return this.multiply(Fraction.reciprocal(other));
+	}
+
 	serialize(): string {
 		return `${this.numerator}/${this.denominator}`;
 	}
 
 	lessThan(other: Fraction): boolean {
-		return Fraction.sum(this, Fraction.negative(other)).numerator < 0;
+		return Fraction.difference(this, other).numerator < 0;
 	}
 
-	lessThanOrEqual(other: Fraction): boolean {
-		return Fraction.sum(this, Fraction.negative(other)).numerator <= 0;
+	lessThanOrEqualTo(other: Fraction): boolean {
+		return Fraction.difference(this, other).numerator <= 0;
 	}
 
-	static fractionalClone<T>(object: T & object): T & object {
-		if (object instanceof Fraction) {
-			return new Fraction(object.numerator, object.denominator) as unknown as T & object;
-		} else if (Array.isArray(object)) {
-			return object.map(element => Fraction.fractionalClone(element)) as unknown as T & object;
-		} else if (typeof object === "object" && object !== null) {
-			return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as unknown as T & object;
+	equalTo(other: Fraction): boolean {
+		return Fraction.difference(this, other).numerator === 0;
+	}
+
+	static fractionalClone<T>(obj: T): T {
+		if (obj instanceof Fraction) {
+			return new Fraction(obj.numerator, obj.denominator) as T;
+		} else if (Array.isArray(obj)) {
+			return obj.map(element => Fraction.fractionalClone(element)) as T;
+		} else if (typeof obj === "object" && obj !== null) {
+			return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as T;
 		} else {
-			return object;
+			return obj;
 		}
 	}
 }

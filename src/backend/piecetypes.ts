@@ -1,17 +1,6 @@
 import Fraction from './arithmetic.js';
 import assert from 'assert';
 
-export interface GameData {
-	whoseTurn: keyof typeof Sides;
-	castling: {
-		canWhiteCastleLeft: boolean;
-		canWhiteCastleRight: boolean;
-		canBlackCastleLeft: boolean;
-		canBlackCastleRight: boolean;
-	};
-	enpassant: Coord | false;
-}
-
 export function isObject(candidate: any): boolean {
 	return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);
 }
@@ -24,6 +13,14 @@ export const Pieces = {
 	queen: "queen",
 	king: "king",
 } as const;
+
+export const validPromotions: Set<any> = new Set([
+	Pieces.knight,
+	Pieces.bishop,
+	Pieces.rook,
+	Pieces.queen,
+	undefined
+]);
 
 export const Sides = {
 	white: "white",
@@ -46,12 +43,15 @@ export interface Coord {
 	promotion?: keyof typeof Pieces;
 }
 
+export function discardPromotion(coord: Coord): Coord {
+	return {
+		x: coord.x,
+		y: coord.y,
+	};
+}
+
 export function isCoord(candidate: any): candidate is Coord {
-	if (isObject(candidate)) {
-		return ['["x","y"]', '["x","y","promotion"]'].includes(JSON.stringify(Object.keys(candidate))) && isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && [...Object.keys(Pieces), undefined].includes(candidate.promotion);
-	} else {
-		return false;
-	}
+	return isObject(candidate) ? isPartialCoord(candidate.x) && isPartialCoord(candidate.y) && validPromotions.has(candidate.promotion) : false;
 }
 
 export function areCoordsEqual(coordOne: Coord, coordTwo: Coord): boolean {
@@ -62,19 +62,19 @@ export interface WeightedCoord extends Coord {
 	probability: Fraction;
 }
 
-export function discardProbability(coordinate: WeightedCoord): Coord {
+export function discardProbability(coord: WeightedCoord): Coord {
 	const copy: any = {
-		x: coordinate.x,
-		y: coordinate.y,
+		x: coord.x,
+		y: coord.y,
 	};
-	if ("promotion" in coordinate) {
-		copy.promotion = coordinate.promotion;
+	if ("promotion" in coord) {
+		copy.promotion = coord.promotion;
 	}
 	return copy;
 }
 
-export function addProbability(coordinate: Coord): WeightedCoord {
-	const copy: any = structuredClone(coordinate);
+export function addProbability(coord: Coord): WeightedCoord {
+	const copy: any = structuredClone(coord);
 	copy.probability = new Fraction;
 	return copy;
 }
@@ -164,7 +164,7 @@ export interface IndexedPiece {
 
 export interface ObjectSet {
 	pieceType: ColoredPiece;
-	partialPieces: PositionedPiece[];
+	units: PositionedPiece[];
 }
 
 export interface CompletedSet {
@@ -176,9 +176,47 @@ export function actualType(completedPiece: CompletedSet): keyof typeof Pieces {
 	return completedPiece.position.promotion ?? completedPiece.pieceType.type_p;
 }
 
+export interface GameData {
+	whoseTurn: keyof typeof Sides;
+	castling: {
+		canWhiteCastleLeft: boolean;
+		canWhiteCastleRight: boolean;
+		canBlackCastleLeft: boolean;
+		canBlackCastleRight: boolean;
+	};
+	enpassant: Coord | false;
+}
+
+export const defaultData: GameData = {
+	whoseTurn: Sides.white,
+	castling: {
+		canWhiteCastleLeft: true,
+		canWhiteCastleRight: true,
+		canBlackCastleLeft: true,
+		canBlackCastleRight: true,
+	},
+	enpassant: false,
+}
+
 export interface ObjectPosition {
 	objects: ObjectSet[];
 	otherData: GameData;
+}
+
+export function findUnit(quantumPos: ObjectPosition, coord: Coord): PositionedPiece | undefined {
+	return quantumPos.objects.flatMap(objectSet => objectSet.units).find(unit => areCoordsEqual(unit.position, coord));
+}
+
+export function findObjectSet(quantumPos: ObjectPosition, coord: Coord): ObjectSet | undefined {
+	return quantumPos.objects.find(objectSet => objectSet.units.some(unit => areCoordsEqual(unit.position, coord)));
+}
+
+export function findObjectSetFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
+	return quantumPos.objects.find(objectSet => objectSet.pieceType.type_p === rawType && objectSet.pieceType.side === side);
+}
+
+export function areOfDifferentObjects(quantumPos: ObjectPosition, coordOne: Coord, coordTwo: Coord): boolean {
+	return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObjectSet(quantumPos, coordOne), findObjectSet(quantumPos, coordTwo))
 }
 
 export interface CompletedPosition {
@@ -186,8 +224,12 @@ export interface CompletedPosition {
 	otherData?: GameData;
 }
 
-export function getPiece(completedPosition: CompletedPosition, coordinate: Coord): CompletedSet | undefined {
-	return completedPosition.pieces.find(completedPiece => areCoordsEqual(completedPiece.position, coordinate));
+export function findPiece(completedPos: CompletedPosition, coord: Coord): CompletedSet | undefined {
+	return completedPos.pieces.find(completedPiece => areCoordsEqual(completedPiece.position, coord));
+}
+
+export function findPieceFromType(completedPos: CompletedPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): CompletedSet | undefined {
+	return completedPos.pieces.find(completedPiece => completedPiece.pieceType.type_p === rawType && completedPiece.pieceType.side === side);
 }
 
 export const defaultPosition: CompletedPosition = {
@@ -225,28 +267,29 @@ export const defaultPosition: CompletedPosition = {
 		{ pieceType: { type_p: Pieces.knight, side: Sides.black }, position: { x: 7, y: 8 } },
 		{ pieceType: { type_p: Pieces.rook,   side: Sides.black }, position: { x: 8, y: 8 } },
 	],
-	otherData: {
-		whoseTurn: Sides.white,
-		castling: {
-			canWhiteCastleLeft: true,
-			canWhiteCastleRight: true,
-			canBlackCastleLeft: true,
-			canBlackCastleRight: true,
-		},
-		enpassant: false,
-	},
+	otherData: defaultData,
 } as const;
 
-export function completedPositionToObjects(completedPosition: CompletedPosition): ObjectPosition {
+export function completedPositionToObjects(completedPos: CompletedPosition): ObjectPosition {
 	return {
-		objects: completedPosition.pieces.map(completedPiece => ({
+		objects: completedPos.pieces.map(completedPiece => ({
 			pieceType: structuredClone(completedPiece.pieceType),
-			partialPieces: [{
+			units: [{
 				position: addProbability(completedPiece.position),
 				entangledTo: [],
 			}]
 		})),
-		otherData: structuredClone(completedPosition.otherData ?? defaultPosition.otherData)!,
+		otherData: structuredClone(completedPos.otherData ?? defaultData),
+	};
+}
+
+export function objectsToFilledPosition(quantumPos: ObjectPosition): CompletedPosition {
+	return {
+		pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.map(unit => ({
+			pieceType: structuredClone(objectSet.pieceType),
+			position: discardProbability(unit.position),
+		}))),
+		otherData: quantumPos.otherData,
 	};
 }
 
@@ -262,9 +305,9 @@ export type FullBoard = [OptionalPiece, OptionalPiece, OptionalPiece, OptionalPi
                          OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,
                         ];
 
-export function coordToIndex(coordinate: Coord): number {
-	assert(isCoord(coordinate), "Invalid coordinate passed into 'coordToIndex'");
-	return 63 + coordinate.x - 8 * coordinate.y;
+export function coordToIndex(coord: Coord): number {
+	assert(isCoord(coord), "Invalid coordinate passed into 'coordToIndex'");
+	return 63 + coord.x - 8 * coord.y;
 }
 
 export function indexToCoord(index: number): Coord {
@@ -282,15 +325,15 @@ export class ChessboardPosition {
 		const pieceArray: ColoredPiece[] = [];
 		const squareArray: FullBoard = Array(64).fill(undefined) as FullBoard;
 		for (const objectSet of objectPosition) {
-			for (const partialPiece of objectSet.partialPieces) {
-				const thisSquare = coordToIndex(discardProbability(partialPiece.position));
-				const possibleEntanglementsArray: string[] = objectSet.partialPieces.filter(otherPiece => otherPiece !== partialPiece).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position)));
-				assert(squareArray[thisSquare] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
-				assert(partialPiece.entangledTo.every(toCoord => possibleEntanglementsArray.includes(JSON.stringify(toCoord))), "Invalid entanglement to coordinate in initialization of ChessboardPosition");
-				squareArray[thisSquare] = {
+			for (const unit of objectSet.units) {
+				const squareIndex = coordToIndex(discardProbability(unit.position));
+				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position))));
+				assert(squareArray[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
+				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to coordinate in initialization of ChessboardPosition");
+				squareArray[squareIndex] = {
 					ofIndex: pieceArray.length,
-					entangledTo: structuredClone(partialPiece.entangledTo),
-					promotion: partialPiece.position.promotion,
+					entangledTo: structuredClone(unit.entangledTo),
+					promotion: unit.position.promotion,
 				};
 			}
 			pieceArray.push(structuredClone(objectSet.pieceType));
@@ -305,16 +348,16 @@ export interface StandardMove {
 	end: Coord;
 }
 
-export function isStandardMove(candidate: any): candidate is StandardMove {
-	if (isObject(candidate)) {
-		return JSON.stringify(Object.keys(candidate)) === '["start","end"]' && isCoord(candidate.start) && isCoord(candidate.end);
-	} else {
-		return false;
-	}
+export function isStandardMove(candidate: any, permissive: boolean = false): candidate is StandardMove {
+	return isObject(candidate) ? isCoord(candidate.start) && isCoord(candidate.end) && (permissive || candidate.start.promotion === undefined) : false;
 }
 export interface CastleMove {
 	side: keyof typeof Sides;
 	direction: -1 | 1;
+}
+
+export function getCastleProperty(castleMove: CastleMove): "canWhiteCastleRight" | "canBlackCastleRight" | "canWhiteCastleLeft" | "canBlackCastleLeft" {
+	return castleMove.direction === 1 ? castleMove.side === Sides.white ? "canWhiteCastleRight" : "canBlackCastleRight" : castleMove.side ? "canWhiteCastleLeft" : "canBlackCastleLeft";
 }
 
 export interface Enpassant {
@@ -323,7 +366,7 @@ export interface Enpassant {
 }
 
 export interface PawnDoubleMove {
-	chosenPawn: Coord;
+	pushedPawn: Coord;
 }
 
 export type SpecialMove = CastleMove | Enpassant | PawnDoubleMove;
@@ -340,7 +383,7 @@ export function getTypeOfMove(move: object): keyof typeof SpecialMoves | false {
 			return SpecialMoves.castle;
 		case '["attackingPawn","captureSquare"]':
 			return SpecialMoves.enpassant;
-		case '["chosenPawn"]':
+		case '["pushedPawn"]':
 			return SpecialMoves.pawnDoubleMove;
 		default:
 			return false;
@@ -359,10 +402,13 @@ export const MoveDeclarations = {
 
 export interface DeclaredMove {
 	move: Move;
-	declarations: (keyof typeof MoveDeclarations)[];
+	declarations: Set<keyof typeof MoveDeclarations>;
 }
 
+export const allDeclarations: Set<keyof typeof MoveDeclarations> = new Set(Object.keys(MoveDeclarations)) as Set<keyof typeof MoveDeclarations>;
+
 export interface Play {
-	pieceIndex: number;
-	moves: DeclaredMove[];
+	objectIndex: number;
+	primaryMoves: DeclaredMove[];
+	defaultMoves: DeclaredMove[];
 }
