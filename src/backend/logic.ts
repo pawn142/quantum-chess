@@ -214,7 +214,7 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	                       !(winByCheckmate && isInCheck(result, data.whoseTurn)) &&
 	                       declaredMove.declarations.isSubsetOf(allDeclarations) &&
 	                       (actualType(movedPiece) === Pieces.knight || declaredMove.declarations.has(MoveDeclarations.nonLeaping)) &&
-	                       (actualType(movedPiece) !== Pieces.pawn || declaredMove.declarations.has(significantSquares[0].y === significantSquares[2].y ? MoveDeclarations.noCapture : MoveDeclarations.captureOnly)) &&
+	                       (actualType(movedPiece) !== Pieces.pawn || declaredMove.declarations.has(significantSquares[0].x === significantSquares[2].x ? MoveDeclarations.noCapture : MoveDeclarations.captureOnly)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.nonLeaping) && isBlocked(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.noCapture) && isCapture(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.captureOnly) && !isCapture(declaredMove.move, completedPos)) &&
