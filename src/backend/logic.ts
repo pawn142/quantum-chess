@@ -153,7 +153,10 @@ export function isInCheck(completedPos: CompletedPosition, whoseTurn: keyof type
 export function getResultOfMove(move: Move, completedPos: CompletedPosition, makeCopy: boolean = false): CompletedPosition {
 	const newCompletedPos = makeCopy ? structuredClone(completedPos) : completedPos;
 	const endpoint: Coord = generateStartMiddleEnd(move)[2];
-	newCompletedPos.pieces.splice(newCompletedPos.pieces.findIndex(completedPiece => areCoordsEqual(completedPiece.position, endpoint)), 1);
+	const captureIndex: number = newCompletedPos.pieces.findIndex(completedPiece => areCoordsEqual(completedPiece.position, endpoint));
+	if (captureIndex !== -1) {
+		newCompletedPos.pieces.splice(captureIndex, 1);
+	}
 	if (newCompletedPos.otherData) {
 		newCompletedPos.otherData.enpassant = false;
 	}
@@ -321,7 +324,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(declaredMove.move);
 	const movedObject: ObjectSet = findObjectSet(quantumPos, significantSquares[0])!;
 	const filledPos: CompletedPosition = objectsToFilledPosition(quantumPos);
-	filledPos.pieces = filledPos.pieces.filter(completedPiece => areCoordsEqual(completedPiece.position, significantSquares[0]) || areOfDifferentObjects(quantumPos, completedPiece.position, significantSquares[0]))
+	filledPos.pieces = filledPos.pieces.filter(completedPiece => areCoordsEqual(completedPiece.position, significantSquares[0]) || areOfDifferentObjects(quantumPos, completedPiece.position, significantSquares[0]));
 	if (declaredMove.declarations.has("captureOnly") || declaredMove.declarations.has("noCapture") || isEndpointBlocked(declaredMove.move, filledPos)) {
 		currentDependencies.push(significantSquares[2]);
 	}
