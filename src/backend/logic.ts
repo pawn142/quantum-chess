@@ -153,7 +153,7 @@ export function isInCheck(completedPos: CompletedPosition, whoseTurn: keyof type
 export function getResultOfMove(move: Move, completedPos: CompletedPosition, makeCopy: boolean = false): CompletedPosition {
 	const newCompletedPos = makeCopy ? structuredClone(completedPos) : completedPos;
 	const endpoint: Coord = generateStartMiddleEnd(move)[2];
-	newCompletedPos.pieces.filter(completedPiece => !areCoordsEqual(completedPiece.position, endpoint));
+	newCompletedPos.pieces.splice(newCompletedPos.pieces.findIndex(completedPiece => areCoordsEqual(completedPiece.position, endpoint)), 1);
 	if (newCompletedPos.otherData) {
 		newCompletedPos.otherData.enpassant = false;
 	}
