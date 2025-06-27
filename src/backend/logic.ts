@@ -334,7 +334,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 			possiblePositions.forEach(completedPos => {
 				getResultOfMove(declaredMove.move, completedPos);
 			});
-			return possiblePositions.some(completedPos => predicate(completedPos)) && possiblePositions.some(completedPos => !predicate(completedPos))
+			return possiblePositions.some(completedPos => predicate(completedPos)) && possiblePositions.some(completedPos => !predicate(completedPos));
 		})(generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(movedObject), movedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0]))), ((completedPos: CompletedPosition) => !!findPiece(completedPos, checkedCoord) && !!findPiece(completedPos, checkingPiece.position) && !isBlocked({
 			start: checkingPiece.position,
 			end: checkedCoord,
