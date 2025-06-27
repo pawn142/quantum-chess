@@ -35,28 +35,28 @@ export function generateStartMiddleEnd(move: Move): [Coord, Coord[], Coord] {
 		const diff_x: number = move.end.x - move.start.x;
 		const diff_y: number = move.end.y - move.start.y;
 		if (!diff_x) {
-			for (let i = Math.min(move.start.y, move.end.y) + 1, end = i + Math.abs(diff_y); i < end; ++i) {
+			for (let i = Math.min(move.start.y, move.end.y) + 1, end = i + Math.abs(diff_y) - 1; i < end; ++i) {
 				coords.push({
 					x: move.start.x,
 					y: i as PartialCoord,
 				});
 			}
 		} else if (!diff_y) {
-			for (let i = Math.min(move.start.x, move.end.x) + 1, end = i + Math.abs(diff_x); i < end; ++i) {
+			for (let i = Math.min(move.start.x, move.end.x) + 1, end = i + Math.abs(diff_x) - 1; i < end; ++i) {
 				coords.push({
 					x: i as PartialCoord,
 					y: move.start.y,
 				});
 			}
 		} else if (diff_x === diff_y) {
-			for (let i = Math.min(move.start.x, move.end.x) + 1, j = Math.min(move.start.y, move.end.y) + 1, end = i + Math.abs(diff_x); i < end; ++i, ++j) {
+			for (let i = Math.min(move.start.x, move.end.x) + 1, j = Math.min(move.start.y, move.end.y) + 1, end = i + Math.abs(diff_x) - 1; i < end; ++i, ++j) {
 				coords.push({
 					x: i as PartialCoord,
 					y: j as PartialCoord,
 				});
 			}
 		} else if (diff_x === -diff_y) {
-			for (let i = Math.min(move.start.x, move.end.x) + 1, j = Math.max(move.start.y, move.end.y) - 1, end = i + Math.abs(diff_x); i < end; ++i, --j) {
+			for (let i = Math.min(move.start.x, move.end.x) + 1, j = Math.max(move.start.y, move.end.y) - 1, end = i + Math.abs(diff_x) - 1; i < end; ++i, --j) {
 				coords.push({
 					x: i as PartialCoord,
 					y: j as PartialCoord,
