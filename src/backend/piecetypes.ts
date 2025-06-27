@@ -196,7 +196,7 @@ export const defaultData: GameData = {
 		canBlackCastleRight: true,
 	},
 	enpassant: false,
-}
+};
 
 export interface ObjectPosition {
 	objects: ObjectSet[];
@@ -216,7 +216,7 @@ export function findObjectSetFromType(quantumPos: ObjectPosition, rawType: keyof
 }
 
 export function areOfDifferentObjects(quantumPos: ObjectPosition, coordOne: Coord, coordTwo: Coord): boolean {
-	return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObjectSet(quantumPos, coordOne), findObjectSet(quantumPos, coordTwo))
+	return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObjectSet(quantumPos, coordOne), findObjectSet(quantumPos, coordTwo));
 }
 
 export interface CompletedPosition {

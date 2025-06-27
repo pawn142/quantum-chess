@@ -1,12 +1,12 @@
+import globals from "globals";
 import pluginJs from "@eslint/js";
 import parserTypescript from "@typescript-eslint/parser";
-import globalIgnores from "eslint/config";
 
 export default [
 	pluginJs.configs.recommended,
-	globalIgnores([ "dist/" ]),
 	{
 		files: [ "**/*.js", "**/*.ts" ],
+		ignores: [ "dist/" ],
 		rules: {
 			"no-undef": "off",
 			"no-unused-vars": "warn",
@@ -47,6 +47,8 @@ export default [
 			sourceType: "module",
 			globals: {
 				NodeJS: "readonly",
+				...globals.node,
+				...globals.browser,
 			}
 		}
 	},
