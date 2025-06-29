@@ -207,16 +207,16 @@ export function findUnit(quantumPos: ObjectPosition, coord: Coord): PositionedPi
 	return quantumPos.objects.flatMap(objectSet => objectSet.units).find(unit => areCoordsEqual(unit.position, coord));
 }
 
-export function findObjectSet(quantumPos: ObjectPosition, coord: Coord): ObjectSet | undefined {
+export function findObject(quantumPos: ObjectPosition, coord: Coord): ObjectSet | undefined {
 	return quantumPos.objects.find(objectSet => objectSet.units.some(unit => areCoordsEqual(unit.position, coord)));
 }
 
-export function findObjectSetFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
+export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
 	return quantumPos.objects.find(objectSet => objectSet.pieceType.type_p === rawType && objectSet.pieceType.side === side);
 }
 
 export function areOfDifferentObjects(quantumPos: ObjectPosition, coordOne: Coord, coordTwo: Coord): boolean {
-	return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObjectSet(quantumPos, coordOne), findObjectSet(quantumPos, coordTwo));
+	return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObject(quantumPos, coordOne), findObject(quantumPos, coordTwo));
 }
 
 export interface CompletedPosition {
@@ -329,7 +329,7 @@ export class ChessboardPosition {
 				const squareIndex = coordToIndex(discardProbability(unit.position));
 				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardProbability(otherPiece.position))));
 				assert(squareArray[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
-				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to coordinate in initialization of ChessboardPosition");
+				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
 				squareArray[squareIndex] = {
 					ofIndex: pieceArray.length,
 					entangledTo: structuredClone(unit.entangledTo),

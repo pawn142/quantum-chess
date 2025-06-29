@@ -23,6 +23,17 @@ export default class Fraction {
 		return (a * b) / Fraction.gcd(a, b);
 	}
 
+	static expanded_lcm(...numbers: number[]): number {
+		switch (numbers.length) {
+			case 0:
+				return 1;
+			case 1:
+				return numbers[0]!;
+			default:
+				return Fraction.lcm(numbers[0]!, Fraction.expanded_lcm(...numbers.slice(1)));
+		}
+	}
+
 	simplify(): Fraction {
 		const commonDivisor: number = Fraction.gcd(this.numerator, this.denominator);
 		this.numerator /= commonDivisor;

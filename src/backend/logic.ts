@@ -1,7 +1,8 @@
 import Fraction from "./arithmetic.js";
 import assert from "assert";
-import { actualType, /*addProbability,*/ allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, defaultData, discardPromotion, discardProbability, findObjectSet, findObjectSetFromType, findPiece, findPieceFromType, /*findUnit,*/ getCastleProperty, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
+import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, defaultData, discardPromotion, discardProbability, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
 import { defaultSettings, getCastleValues, objectsToGamePosition, Settings} from "./metatypes.js";
+import { chooseWeightedElement, random } from "./random.js";
 
 export function isInRange(move: StandardMove, piece: CompletedSet | keyof typeof Pieces, side: keyof typeof Sides = typeof piece === "string" ? Sides.white : piece.pieceType.side): boolean {
 	if (areCoordsEqual(move.start, move.end)) {
@@ -278,22 +279,23 @@ export function isMoveAlwaysLegal(declaredMove: DeclaredMove, quantumPos: Object
 }
 
 export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings): Set<number> {
-	assert(Number.isInteger(play.objectIndex) && 0 <= play.objectIndex && play.objectIndex < quantumPos.objects.length, "Invalid object index passed into 'isPlayLegal'");
+	const playedObject: ObjectSet | undefined = quantumPos.objects[play.objectIndex];
+	assert(playedObject, "Invalid object index passed into 'isPlayLegal'");
 	const problems: Set<number> = new Set;
 	if (!play.primaryMoves.length) {
 		problems.add(1);
 	}
-	if (quantumPos.objects[play.objectIndex]!.pieceType.side !== quantumPos.otherData.whoseTurn) {
+	if (playedObject.pieceType.side !== quantumPos.otherData.whoseTurn) {
 		problems.add(2);
 	}
 	const unitPositions: Set<string> = new Set(quantumPos.objects[play.objectIndex]!.units.map(unit => JSON.stringify(discardPromotion(unit.position))));
-	if ([...play.primaryMoves].some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
+	if (play.primaryMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
 		problems.add(3);
 	}
-	if ([...play.defaultMoves].some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
+	if (play.defaultMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
 		problems.add(4);
 	}
-	quantumPos.objects[play.objectIndex]!.units.entries().forEach(([unitIndex, unit]) => {
+	playedObject.units.forEach((unit, unitIndex) => {
 		const localPrimaries: DeclaredMove[] = play.primaryMoves.filter(declaredMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[0], unit.position));
 		const localDefaults: DeclaredMove[] = play.defaultMoves.filter(declaredMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[0], unit.position));
 		if (localDefaults.length > 1) {
@@ -322,7 +324,7 @@ export function isPlayLegal(play: Play, quantumPos: ObjectPosition, settings: Se
 export function generateDependencies(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate): Coord[] {
 	const currentDependencies: Coord[] = [];
 	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(declaredMove.move);
-	const movedObject: ObjectSet = findObjectSet(quantumPos, significantSquares[0])!;
+	const playedObject: ObjectSet = findObject(quantumPos, significantSquares[0])!;
 	const filledPos: CompletedPosition = objectsToFilledPosition(quantumPos);
 	filledPos.pieces = filledPos.pieces.filter(completedPiece => areCoordsEqual(completedPiece.position, significantSquares[0]) || areOfDifferentObjects(quantumPos, completedPiece.position, significantSquares[0]));
 	if (declaredMove.declarations.has("captureOnly") || declaredMove.declarations.has("noCapture") || isEndpointBlocked(declaredMove.move, filledPos)) {
@@ -334,11 +336,9 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 	getResultOfMove(declaredMove.move, filledPos);
 	function getCheckingDependencies(checkedCoords: Coord[], side: keyof typeof Sides): Coord[] {
 		return checkedCoords.flatMap(checkedCoord => getLeapCheckingPieces(filledPos, side, checkedCoord).flatMap(checkingPiece => ((possiblePositions, predicate) => {
-			possiblePositions.forEach(completedPos => {
-				getResultOfMove(declaredMove.move, completedPos);
-			});
+			possiblePositions.forEach(completedPos => getResultOfMove(declaredMove.move, completedPos));
 			return possiblePositions.some(completedPos => predicate(completedPos)) && possiblePositions.some(completedPos => !predicate(completedPos));
-		})(generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(movedObject), movedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0]))), ((completedPos: CompletedPosition) => !!findPiece(completedPos, checkedCoord) && !!findPiece(completedPos, checkingPiece.position) && !isBlocked({
+		})(generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0]))), ((completedPos: CompletedPosition) => !!findPiece(completedPos, checkedCoord) && !!findPiece(completedPos, checkingPiece.position) && !isBlocked({
 			start: checkingPiece.position,
 			end: checkedCoord,
 		}, completedPos))) ? (checkingPiece.pieceType.type_p === Pieces.knight ? [] : getBlockingPieces({
@@ -347,67 +347,73 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 		}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.position))).concat(checkedCoord, discardPromotion(checkingPiece.position)) : []));
 	}
 	if (winByCheckmate) {
-		currentDependencies.push(...getCheckingDependencies(findObjectSetFromType(quantumPos, Pieces.king, quantumPos.otherData.whoseTurn)!.units.map(unit => discardPromotion(unit.position)), quantumPos.otherData.whoseTurn));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, Pieces.king, quantumPos.otherData.whoseTurn)!.units.map(unit => discardPromotion(unit.position)), quantumPos.otherData.whoseTurn));
 		if (getTypeOfMove(declaredMove.move) === SpecialMoves.castle) {
 			currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]!], quantumPos.otherData.whoseTurn));
 		}
 	}
 	if (declaredMove.declarations.has("noCheck") || declaredMove.declarations.has("checkOnly")) {
-		currentDependencies.push(...getCheckingDependencies(findObjectSetFromType(quantumPos, Pieces.king, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.position)), otherSide(quantumPos.otherData.whoseTurn)));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, Pieces.king, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.position)), otherSide(quantumPos.otherData.whoseTurn)));
 	}
-	return currentDependencies.filter(dependency => areOfDifferentObjects(quantumPos, significantSquares[0], dependency));
+	const filteredDependencies: Coord[] = [];
+	currentDependencies.forEach(dependency => {
+		if (areOfDifferentObjects(quantumPos, significantSquares[0], dependency) && filteredDependencies.every(filteredDependency => !areCoordsEqual(filteredDependency, dependency))) {
+			filteredDependencies.push(dependency);
+		}
+	});
+	return filteredDependencies;
 }
 
 export function cleanEntanglements(units: PositionedPiece[], makeCopy: boolean = false): PositionedPiece[] {
 	const newUnits: PositionedPiece[] = makeCopy ? Fraction.fractionalClone(units) : units;
 	const unitPositions: Set<string> = new Set(units.map(unit => JSON.stringify(discardPromotion(unit.position))));
-	newUnits.forEach(unit => {
-		unit.entangledTo = unit.entangledTo.filter(entangledCoord => unitPositions.has(JSON.stringify(entangledCoord)));
-	});
+	newUnits.forEach(unit => unit.entangledTo = unit.entangledTo.filter(entangledCoord => unitPositions.has(JSON.stringify(entangledCoord))));
 	return newUnits;
 }
 
-/*export function generateMeasurementResults(quantumPos: ObjectPosition, objectSet: ObjectSet, dependencies: Coord[], measurementType: boolean = defaultSettings.measurementType, coefficient: Fraction = new Fraction): [ObjectPosition, Fraction, boolean][] {
-	assert(quantumPos.objects.includes(objectSet), "Invalid object reference passed into 'generateMeasurementResults'");
-	const objectIndex: number = quantumPos.objects.indexOf(objectSet);
-	const excludedUnitArray: PositionedPiece[] = objectSet.units.filter(unit => falseCoords.some(falseCoord => areCoordsEqual(falseCoord, unit.position)) || !!trueCoords.length && !trueCoords.some(trueCoord => areCoordsEqual(trueCoord, unit.position)));
-	const excludedUnitSet: Set<PositionedPiece> = new Set(excludedUnitArray);
-	const measurementSet: Set<PositionedPiece> = new Set(excludedUnitArray.flatMap(unit => [unit, ...unit.entangledTo.map(entangledCoord => findUnit(quantumPos, entangledCoord)!)]));
-	const measurementArray: PositionedPiece[] = [...measurementSet];
-	const totalProbability: Fraction = Fraction.sum(...objectSet.units.map(unit => unit.position.probability));
-	const innerProbability: Fraction = Fraction.sum(...measurementArray.map(unit => unit.position.probability));
-	if (measurementType) {
-		const copiedPosQ: ObjectPosition = Fraction.fractionalClone(quantumPos);
-		let selectedUnits: PositionedPiece[] = copiedPosQ.objects[objectIndex]!.units;
-		selectedUnits = cleanEntanglements(selectedUnits.filter(unit => !measurementSet.has(unit)));
-		if (!selectedUnits.length) {
-			copiedPosQ.objects.splice(objectIndex, 1);
+export function generateMeasurementResults(declaredMove: DeclaredMove, quantumPos: ObjectPosition, dependencies: Coord[], winByCheckmate: boolean = defaultSettings.winByCheckmate, measurementType: boolean = defaultSettings.measurementType, makeCopy: boolean = false): [ObjectPosition, boolean] {
+	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(declaredMove.move);
+	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+	const playedObject: ObjectSet = findObject(newQuantumPos, significantSquares[0])!;
+	const possiblePositions: CompletedPosition[] = generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0])));
+	while (possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate))) {
+		const dependentUnit: PositionedPiece = findUnit(newQuantumPos, dependencies.splice(random(dependencies.length), 1)[0]!)!;
+		const measurementSet: PositionedPiece[] = [dependentUnit, ...dependentUnit.entangledTo.map(entangledCoord => findUnit(newQuantumPos, entangledCoord)!)];
+		const totalProbability: Fraction = Fraction.sum(...playedObject.units.map(unit => unit.position.probability));
+		const innerProbability: Fraction = Fraction.sum(...measurementSet.map(unit => unit.position.probability));
+		if (measurementType) {
+			if (random(innerProbability.denominator) < innerProbability.numerator) {
+				playedObject.units.splice(0, playedObject.units.indexOf(chooseWeightedElement(measurementSet)));
+				playedObject.units.splice(1);
+				playedObject.units[0]!.position.probability = new Fraction;
+			} else {
+				playedObject.units.slice().reverse().forEach((unit, unitIndex, reversedArray) => {
+					if (measurementSet.includes(unit)) {
+						playedObject.units.splice(reversedArray.length - unitIndex - 1, 1);
+					} else {
+						unit.position.probability.divide(Fraction.difference(new Fraction, innerProbability));
+					}
+				});
+			}
+		} else {
+			const selectedUnit: PositionedPiece = chooseWeightedElement(measurementSet);
+			selectedUnit.position.probability = innerProbability;
+			measurementSet.filter(unit => unit !== selectedUnit).forEach(unit => playedObject.units.splice(playedObject.units.indexOf(unit), 1));
+			if (selectedUnit === dependentUnit) {
+				if (random(totalProbability.denominator) < totalProbability.numerator) {
+					playedObject.units.splice(0, playedObject.units.indexOf(chooseWeightedElement(playedObject.units)));
+					playedObject.units.splice(1);
+					playedObject.units[0]!.position.probability = new Fraction;
+				} else {
+					newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(playedObject), 1);
+				}
+			}
 		}
-		for (const unit of selectedUnits) {
-			unit.position.probability.divide((new Fraction).subtract(innerProbability));
-		}
-		return [...measurementArray.map(unit => {
-			const copiedPos: ObjectPosition = Fraction.fractionalClone(quantumPos);
-			copiedPos.objects[objectIndex]!.units = [{
-				position: addProbability(discardProbability(unit.position)),
-				entangledTo: [],
-			}];
-			return [copiedPos, Fraction.product(coefficient, unit.position.probability), !excludedUnitSet.has(unit)];
-		}), ...(innerProbability.lessThan(new Fraction) ? [[copiedPosQ, Fraction.product(coefficient, (new Fraction).subtract(innerProbability)), true]] : [])] as [ObjectPosition, Fraction, boolean][];
-	} else {
-		return [...objectSet.units.filter(unit => measurementSet.has(unit) && !excludedUnitSet.has(unit)).keys().map(unitIndex => {
-			const copiedPos: ObjectPosition = Fraction.fractionalClone(quantumPos);
-			let selectedUnits: PositionedPiece[] = copiedPos.objects[objectIndex]!.units;
-			selectedUnits[unitIndex]!.position.probability = Fraction.fractionalClone(innerProbability);
-			selectedUnits = cleanEntanglements(selectedUnits.filter(unit => !excludedUnitSet.has(unit)));
-
-		})];
+		cleanEntanglements(playedObject.units);
 	}
+	return [newQuantumPos, isMoveLegal(declaredMove, possiblePositions[0]!, winByCheckmate)];
 }
 
-export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings, coefficient: Fraction = new Fraction): [ObjectPosition, Fraction][] {
-	if (!play.primaryMoves.length) {
-		return [[quantumPos, coefficient]];
-	}
-	
+/*export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings): [ObjectPosition, Fraction][] {
+
 }*/

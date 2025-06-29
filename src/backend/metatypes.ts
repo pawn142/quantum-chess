@@ -12,20 +12,34 @@ export function coordserialize(coord: Coord): string {
 	return boardFiles[coord.x - 1] + coord.y.toString();
 }
 
-export class PieceEntanglement {
+export class Entanglement {
 	fromIndex: number;
 	toIndex: number;
+
 	constructor(fromCandidate: number, toCandidate: number, rangeList: any[] = chessboard) {
-		assert(Number.isInteger(fromCandidate) && Number.isInteger(toCandidate), "Tried to initialize PieceEntanglement with a non-integer from index or to index");
-		assert(0 <= fromCandidate && fromCandidate < rangeList.length && 0 <= toCandidate && toCandidate < rangeList.length, "Tried to initialize PieceEntanglement with a from index or to index that is out of bounds");
+		assert(new Set([fromCandidate, toCandidate]).isSubsetOf(new Set(rangeList.keys())), "Tried to initialize PieceEntanglement with an invalid from index or to index");
 		this.fromIndex = fromCandidate;
 		this.toIndex = toCandidate;
+	}
+
+	static entangledClone<T>(obj: T): T {
+		if (obj instanceof Fraction) {
+			return new Fraction(obj.numerator, obj.denominator) as T;
+		} else if (obj instanceof Entanglement) {
+			return new Entanglement(obj.fromIndex, obj.toIndex) as T;
+		} else if (Array.isArray(obj)) {
+			return obj.map(element => Fraction.fractionalClone(element)) as T;
+		} else if (typeof obj === "object" && obj !== null) {
+			return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as T;
+		} else {
+			return obj;
+		}
 	}
 }
 
 export interface PieceSet {
 	positions: WeightedCoord[];
-	entanglements: PieceEntanglement[];
+	entanglements: Entanglement[];
 };
 
 export interface HalfPosition {
@@ -136,22 +150,14 @@ export function getPositionString(gamePosition: GamePosition): string {
 	let positionString: string = `turn: ${gamePosition.otherData.whoseTurn}, castling: wl ${gamePosition.otherData.castling.canWhiteCastleLeft.toString()} wr ${gamePosition.otherData.castling.canWhiteCastleRight.toString()} bl ${gamePosition.otherData.castling.canBlackCastleLeft.toString()} br ${gamePosition.otherData.castling.canBlackCastleRight.toString()}, enpassant: ${gamePosition.otherData.enpassant ? coordserialize(gamePosition.otherData.enpassant) : "false"}`;
 	filteredEntries(gamePosition.whitePosition).forEach(([whiteKey, whitePiece]: [string, PieceSet]) => {
 		let whiteString: string = "";
-		whitePiece.positions.forEach(coord => {
-			whiteString += ` (${coordserialize(coord)},${coord.probability.serialize() + (coord.promotion ? "," + coord.promotion : "")}),`;
-		});
-		whitePiece.entanglements.forEach(entanglement => {
-			whiteString += ` <${entanglement.fromIndex}-${entanglement.toIndex}>,`;
-		});
+		whitePiece.positions.forEach(coord => whiteString += ` (${coordserialize(coord)},${coord.probability.serialize() + (coord.promotion ? "," + coord.promotion : "")}),`);
+		whitePiece.entanglements.forEach(entanglement => whiteString += ` <${entanglement.fromIndex}-${entanglement.toIndex}>,`);
 		positionString += `|${whiteKey[0]!.toUpperCase() + whiteKey.slice(1)}:${whiteString.slice(0, -1)}`;
 	});
 	filteredEntries(gamePosition.blackPosition).forEach(([blackKey, blackPiece]: [string, PieceSet]) => {
 		let blackString: string = "";
-		blackPiece.positions.forEach(coord => {
-			blackString += ` (${coordserialize(coord)},${coord.probability.serialize() + (coord.promotion ? "," + coord.promotion : "")}),`;
-		});
-		blackPiece.entanglements.forEach(entanglement => {
-			blackString += ` <${entanglement.fromIndex}-${entanglement.toIndex}>,`;
-		});
+		blackPiece.positions.forEach(coord => blackString += ` (${coordserialize(coord)},${coord.probability.serialize() + (coord.promotion ? "," + coord.promotion : "")}),`);
+		blackPiece.entanglements.forEach(entanglement => blackString += ` <${entanglement.fromIndex}-${entanglement.toIndex}>,`);
 		positionString += `|${blackKey}:${blackString.slice(0, -1)}`;
 	});
 	return positionString;
@@ -164,7 +170,7 @@ export function getPositionFromString(positionString: string): GamePosition {
 	const blackPositionArray: [string, PieceSet][] = [];
 	for (const pieceString of components.slice(1)) {
 		const positionArray: WeightedCoord[] = [];
-		const entanglementArray: PieceEntanglement[] = [];
+		const entanglementArray: Entanglement[] = [];
 		for (const segment of pieceString.split(" ").slice(1)) {
 			if (segment[0] === "(") {
 				positionArray.push({
@@ -174,7 +180,7 @@ export function getPositionFromString(positionString: string): GamePosition {
 					probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
 				});
 			} else {
-				entanglementArray.push(new PieceEntanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!.slice(0, -1)), positionArray));
+				entanglementArray.push(new Entanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!.slice(0, -1)), positionArray));
 			}
 		}
 		(pieceString[0] === pieceString[0]!.toLowerCase() ? blackPositionArray : whitePositionArray).push([pieceString.slice(0, 2).toLowerCase(), {
@@ -255,7 +261,7 @@ export function objectsToGamePosition(objectPosition: ObjectPosition): GamePosit
 		}
 		return {
 			positions: pieces.map(piece => Fraction.fractionalClone(piece.position)),
-			entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new PieceEntanglement(pieces.indexOf(piece), pieces.findIndex(candidate => areCoordsEqual(candidate.position, pieceCoord)), pieces))),
+			entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new Entanglement(pieces.indexOf(piece), pieces.findIndex(candidate => areCoordsEqual(candidate.position, pieceCoord)), pieces))),
 		};
 	}
 	return {
