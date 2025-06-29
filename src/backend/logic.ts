@@ -377,19 +377,21 @@ export function generateMeasurementResults(declaredMove: DeclaredMove, quantumPo
 	const playedObject: ObjectSet = findObject(newQuantumPos, significantSquares[0])!;
 	const possiblePositions: CompletedPosition[] = generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0])));
 	while (possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate))) {
-		const dependentUnit: PositionedPiece = findUnit(newQuantumPos, dependencies.splice(random(dependencies.length), 1)[0]!)!;
+		const chosenDependency: Coord = dependencies.splice(random(dependencies.length), 1)[0]!;
+		const dependentUnit: PositionedPiece = findUnit(newQuantumPos, chosenDependency)!;
+		const dependentObject: ObjectSet = findObject(newQuantumPos, chosenDependency)!;
 		const measurementSet: PositionedPiece[] = [dependentUnit, ...dependentUnit.entangledTo.map(entangledCoord => findUnit(newQuantumPos, entangledCoord)!)];
-		const totalProbability: Fraction = Fraction.sum(...playedObject.units.map(unit => unit.position.probability));
+		const totalProbability: Fraction = Fraction.sum(...dependentObject.units.map(unit => unit.position.probability));
 		const innerProbability: Fraction = Fraction.sum(...measurementSet.map(unit => unit.position.probability));
 		if (measurementType) {
 			if (random(innerProbability.denominator) < innerProbability.numerator) {
-				playedObject.units.splice(0, playedObject.units.indexOf(chooseWeightedElement(measurementSet)));
-				playedObject.units.splice(1);
-				playedObject.units[0]!.position.probability = new Fraction;
+				dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(measurementSet)));
+				dependentObject.units.splice(1);
+				dependentObject.units[0]!.position.probability = new Fraction;
 			} else {
-				playedObject.units.slice().reverse().forEach((unit, unitIndex, reversedArray) => {
+				dependentObject.units.slice().reverse().forEach((unit, unitIndex, reversedArray) => {
 					if (measurementSet.includes(unit)) {
-						playedObject.units.splice(reversedArray.length - unitIndex - 1, 1);
+						dependentObject.units.splice(reversedArray.length - unitIndex - 1, 1);
 					} else {
 						unit.position.probability.divide(Fraction.difference(new Fraction, innerProbability));
 					}
@@ -398,18 +400,18 @@ export function generateMeasurementResults(declaredMove: DeclaredMove, quantumPo
 		} else {
 			const selectedUnit: PositionedPiece = chooseWeightedElement(measurementSet);
 			selectedUnit.position.probability = innerProbability;
-			measurementSet.filter(unit => unit !== selectedUnit).forEach(unit => playedObject.units.splice(playedObject.units.indexOf(unit), 1));
+			measurementSet.filter(unit => unit !== selectedUnit).forEach(unit => dependentObject.units.splice(dependentObject.units.indexOf(unit), 1));
 			if (selectedUnit === dependentUnit) {
 				if (random(totalProbability.denominator) < totalProbability.numerator) {
-					playedObject.units.splice(0, playedObject.units.indexOf(chooseWeightedElement(playedObject.units)));
-					playedObject.units.splice(1);
-					playedObject.units[0]!.position.probability = new Fraction;
+					dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(dependentObject.units)));
+					dependentObject.units.splice(1);
+					dependentObject.units[0]!.position.probability = new Fraction;
 				} else {
-					newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(playedObject), 1);
+					newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(dependentObject), 1);
 				}
 			}
 		}
-		cleanEntanglements(playedObject.units);
+		cleanEntanglements(dependentObject.units);
 	}
 	return [newQuantumPos, isMoveLegal(declaredMove, possiblePositions[0]!, winByCheckmate)];
 }
