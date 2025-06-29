@@ -1,7 +1,7 @@
 import Fraction from "./arithmetic.js";
 import assert from "assert";
-import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, defaultData, discardPromotion, discardProbability, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
-import { defaultSettings, getCastleValues, objectsToGamePosition, Settings} from "./metatypes.js";
+import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, defaultData, discardPromotion, discardProbability, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, typeOnCoord, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
+import { defaultSettings, getAllowedDeclarations, getCastleValues, objectsToGamePosition, Settings} from "./metatypes.js";
 import { chooseWeightedElement, random } from "./random.js";
 
 export function isInRange(move: StandardMove, piece: CompletedSet | keyof typeof Pieces, side: keyof typeof Sides = typeof piece === "string" ? Sides.white : piece.pieceType.side): boolean {
@@ -152,7 +152,7 @@ export function isInCheck(completedPos: CompletedPosition, whoseTurn: keyof type
 }
 
 export function getResultOfMove(move: Move, completedPos: CompletedPosition, makeCopy: boolean = false): CompletedPosition {
-	const newCompletedPos = makeCopy ? structuredClone(completedPos) : completedPos;
+	const newCompletedPos: CompletedPosition = makeCopy ? structuredClone(completedPos) : completedPos;
 	const endpoint: Coord = generateStartMiddleEnd(move)[2];
 	const captureIndex: number = newCompletedPos.pieces.findIndex(completedPiece => areCoordsEqual(completedPiece.position, endpoint));
 	if (captureIndex !== -1) {
@@ -201,6 +201,18 @@ export function getResultOfMove(move: Move, completedPos: CompletedPosition, mak
 	return newCompletedPos;
 }
 
+export function getRequiredDeclarations(move: Move, rawType: keyof typeof Pieces): Set<keyof typeof MoveDeclarations> {
+	const current: Set<keyof typeof MoveDeclarations> = new Set;
+	if (rawType === Pieces.pawn) {
+		const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(move);
+		current.add(significantSquares[0].x === significantSquares[2].x ? MoveDeclarations.noCapture : MoveDeclarations.captureOnly);
+	}
+	if (rawType !== Pieces.knight) {
+		current.add("nonLeaping");
+	}
+	return current;
+}
+
 export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate, data: GameData = completedPos.otherData ?? defaultData): boolean {
 	let significantSquares: [Coord, Coord[], Coord];
 	try {
@@ -208,7 +220,7 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	} catch {
 		return false;
 	}
-	const movedPiece = findPiece(completedPos, significantSquares[0]);
+	const movedPiece: CompletedSet | undefined = findPiece(completedPos, significantSquares[0]);
 	if (!(movedPiece && (getTypeOfMove(declaredMove.move) || isStandardMove(declaredMove.move) && isInRange(declaredMove.move, movedPiece) && (!declaredMove.move.end.promotion || declaredMove.move.end.y === (data.whoseTurn === Sides.white ? 8 : 1) && actualType(movedPiece) === Pieces.pawn)))) {
 		return false;
 	}
@@ -217,8 +229,7 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	                       !isEndpointBlocked(declaredMove.move, completedPos) &&
 	                       !(winByCheckmate && isInCheck(result, data.whoseTurn)) &&
 	                       declaredMove.declarations.isSubsetOf(allDeclarations) &&
-	                       (actualType(movedPiece) === Pieces.knight || declaredMove.declarations.has(MoveDeclarations.nonLeaping)) &&
-	                       (actualType(movedPiece) !== Pieces.pawn || declaredMove.declarations.has(significantSquares[0].x === significantSquares[2].x ? MoveDeclarations.noCapture : MoveDeclarations.captureOnly)) &&
+	                       declaredMove.declarations.isSupersetOf(getRequiredDeclarations(declaredMove.move, actualType(movedPiece))) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.nonLeaping) && isBlocked(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.noCapture) && isCapture(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.captureOnly) && !isCapture(declaredMove.move, completedPos)) &&
@@ -253,9 +264,9 @@ export function generatePossiblePositions(quantumPos: ObjectPosition, fixedObjec
 	let pointer: number = 0;
 	while (pointer >= 0) {
 		completedPositions.push({
-			pieces: [...quantumPos.objects.entries()].map(([pieceIndex, objectSet]) => ({
+			pieces: quantumPos.objects.map((objectSet, objectIndex) => ({
 				pieceType: structuredClone(objectSet.pieceType),
-				position: discardProbability(objectSet.units[currentIndexes[pieceIndex]!]!.position),
+				position: discardProbability(objectSet.units[currentIndexes[objectIndex]!]!.position),
 			})),
 			otherData: structuredClone(quantumPos.otherData),
 		});
@@ -278,40 +289,40 @@ export function isMoveAlwaysLegal(declaredMove: DeclaredMove, quantumPos: Object
 	return generatePossiblePositions(quantumPos).every(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
 }
 
-export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings): Set<number> {
+export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings): Set<string> {
 	const playedObject: ObjectSet | undefined = quantumPos.objects[play.objectIndex];
-	assert(playedObject, "Invalid object index passed into 'isPlayLegal'");
-	const problems: Set<number> = new Set;
+	assert(playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
+	const problems: Set<string> = new Set;
 	if (!play.primaryMoves.length) {
-		problems.add(1);
-	}
-	if (playedObject.pieceType.side !== quantumPos.otherData.whoseTurn) {
-		problems.add(2);
+		problems.add("Null moves are not allowed");
 	}
 	const unitPositions: Set<string> = new Set(quantumPos.objects[play.objectIndex]!.units.map(unit => JSON.stringify(discardPromotion(unit.position))));
 	if (play.primaryMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
-		problems.add(3);
+		problems.add("One or more primary moves are impossible");
 	}
 	if (play.defaultMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
-		problems.add(4);
+		problems.add("One or more default moves are impossible");
+	}
+	if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, typeOnCoord(quantumPos, generateStartMiddleEnd(declaredMove.move)[0])!)).isSubsetOf(getAllowedDeclarations(settings)))) {
+		problems.add("One or more external declarations are not allowed in settings");
 	}
 	playedObject.units.forEach((unit, unitIndex) => {
 		const localPrimaries: DeclaredMove[] = play.primaryMoves.filter(declaredMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[0], unit.position));
 		const localDefaults: DeclaredMove[] = play.defaultMoves.filter(declaredMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[0], unit.position));
 		if (localDefaults.length > 1) {
-			problems.add(5);
+			problems.add("Only one default move per unit");
 		}
 		if (!settings.allowCastling && [...localPrimaries, ...localDefaults].some(declaredMove => getTypeOfMove(declaredMove.move) === SpecialMoves.castle)) {
-			problems.add(6);
+			problems.add("Castling is not allowed in settings");
 		}
 		if (!settings.castleSplitting && localPrimaries.length > 1 && [...localPrimaries, ...localDefaults].some(declaredMove => getTypeOfMove(declaredMove.move) === SpecialMoves.castle)) {
-			problems.add(7);
+			problems.add("Making a split move while castling is not allowed in settings");
 		}
 		if (!settings.pawnDoubleMoveSplitting && localPrimaries.length > 1 && [...localPrimaries, ...localDefaults].some(declaredMove => getTypeOfMove(declaredMove.move) === SpecialMoves.pawnDoubleMove)) {
-			problems.add(8);
+			problems.add("Making a split move with a pawn double move is not allowed in settings");
 		}
 		if (settings.winByCheckmate && generatePossiblePositions(quantumPos, play.objectIndex, unitIndex).some(completedPos => isInCheck(completedPos) && !(localDefaults[0] && isMoveLegal(localDefaults[0], completedPos, true)) && localPrimaries.some(declaredMove => !isMoveLegal(declaredMove, completedPos, true)))) {
-			problems.add(9);
+			problems.add("Play is illegal (see the win by checkmate exception)");
 		}
 	});
 	return problems;
@@ -341,7 +352,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 		})(generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0]))), ((completedPos: CompletedPosition) => !!findPiece(completedPos, checkedCoord) && !!findPiece(completedPos, checkingPiece.position) && !isBlocked({
 			start: checkingPiece.position,
 			end: checkedCoord,
-		}, completedPos))) ? (checkingPiece.pieceType.type_p === Pieces.knight ? [] : getBlockingPieces({
+		}, completedPos))) ? (actualType(checkingPiece) === Pieces.knight ? [] : getBlockingPieces({
 			start: checkingPiece.position,
 			end: checkedCoord,
 		}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.position))).concat(checkedCoord, discardPromotion(checkingPiece.position)) : []));

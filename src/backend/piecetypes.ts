@@ -211,6 +211,10 @@ export function findObject(quantumPos: ObjectPosition, coord: Coord): ObjectSet 
 	return quantumPos.objects.find(objectSet => objectSet.units.some(unit => areCoordsEqual(unit.position, coord)));
 }
 
+export function typeOnCoord(quantumPos: ObjectPosition, coord: Coord): keyof typeof Pieces | undefined {
+	return findUnit(quantumPos, coord)?.position.promotion ?? findObject(quantumPos, coord)?.pieceType.type_p;
+}
+
 export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
 	return quantumPos.objects.find(objectSet => objectSet.pieceType.type_p === rawType && objectSet.pieceType.side === side);
 }

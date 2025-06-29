@@ -1,6 +1,6 @@
 import Fraction from "./arithmetic.js";
 import assert from "assert";
-import { addProbability, areCoordsEqual, chessboard, defaultData, discardProbability, isCoord, validPromotions, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
+import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, discardProbability, isCoord, validPromotions, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord, MoveDeclarations } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {
 	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined && entry[1] !== null);
@@ -294,7 +294,7 @@ export function validStartingPositionCheck(gamePosition: GamePosition): boolean 
 	}
 	const properKeys: string[] = ["", ...Object.keys(defaultGamePosition.whitePosition)] as const;
 	const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
-	return [...Array(candidateKeys.length).keys()].every(pieceIndex => !candidateKeys[pieceIndex] || properKeys.indexOf(candidateKeys[pieceIndex]) > properKeys.indexOf(candidateKeys[pieceIndex - 1]!)) &&
+	return candidateKeys.every((key, keyIndex) => !key || properKeys.indexOf(key) > properKeys.indexOf(candidateKeys[keyIndex - 1]!)) &&
 	       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
 	       [...filteredEntries(gamePosition.whitePosition), ...filteredEntries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => pieceEntry[1].positions.reduce((accumulator, current) => ({
 		       x: 1,
@@ -335,8 +335,8 @@ export interface Settings {
 	advancedQubitMode: boolean;
 	allowedMoveDeclarations: {
 		captureOnly: boolean;
-		checkOnly: boolean;
 		noCapture: boolean;
+		checkOnly: boolean;
 		noCheck: boolean;
 		nonLeaping: boolean;
 	},
@@ -354,10 +354,14 @@ export const defaultSettings: Settings = {
 	advancedQubitMode: false,
 	allowedMoveDeclarations: {
 		captureOnly: false,
-		checkOnly: false,
 		noCapture: false,
+		checkOnly: false,
 		noCheck: false,
 		nonLeaping: false,
 	},
 	measurementType: true,
 } as const;
+
+export function getAllowedDeclarations(settings: Settings): Set<keyof typeof MoveDeclarations> {
+	return new Set([...allDeclarations].filter(declaration => settings.allowedMoveDeclarations[declaration]));
+}
