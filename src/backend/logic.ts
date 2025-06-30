@@ -332,7 +332,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0])!)).isSubsetOf(getAllowedDeclarations(settings)))) {
 		problems.add("One or more external declarations are not allowed in settings");
 	}
-	if (getRespectiveQubitAmount(quantumPos.otherData) - calculateQubitCost(play, quantumPos, settings.advancedQubitMode) < epsilon) {
+	if (getRespectiveQubitAmount(quantumPos.otherData) - calculateQubitCost(play, quantumPos, settings.advancedQubitMode) < -epsilon) {
 		problems.add("Not enough qubits");
 	}
 	playedObject.units.forEach((unit, unitIndex) => {
