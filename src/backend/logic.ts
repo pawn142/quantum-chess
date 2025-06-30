@@ -196,7 +196,7 @@ export function getResultOfMove(move: Move, completedPos: CompletedPosition, mak
 	if (newCompletedPos.otherData) {
 		newCompletedPos.otherData.enpassant = false;
 	}
-	makeMove(move, completedPos);
+	makeMove(move, newCompletedPos);
 	if (newCompletedPos.otherData) {
 		newCompletedPos.otherData.whoseTurn = otherSide(newCompletedPos.otherData.whoseTurn);
 		const castleValues: [boolean, boolean, boolean, boolean] = getCastleValues(objectsToGamePosition(completedPositionToObjects(newCompletedPos)));

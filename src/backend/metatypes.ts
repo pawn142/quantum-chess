@@ -177,7 +177,7 @@ export function getDataFromString(dataString: string): GameData {
 			canBlackCastleLeft: JSON.parse(splitData[8]!),
 			canBlackCastleRight: JSON.parse(splitData[10]!.slice(0, -1)),
 		},
-		enpassant: splitData[12] === "false" ? false : {
+		enpassant: splitData[12] === "false," ? false : {
 			x: boardFiles.indexOf(splitData[12]![0]!) + 1 as PartialCoord,
 			y: parseInt(splitData[12]![1]!) as PartialCoord,
 		},
@@ -307,7 +307,7 @@ export function validStartingPositionCheck(gamePosition: GamePosition): boolean 
 	const properKeys: string[] = ["", ...Object.keys(defaultGamePosition.whitePosition)] as const;
 	const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
 	return [gamePosition.otherData.qubits.whiteBalance, gamePosition.otherData.qubits.blackBalance].every(amount => amount >= 0) &&
-		   candidateKeys.every((key, keyIndex) => !key || properKeys.indexOf(key) > properKeys.indexOf(candidateKeys[keyIndex - 1]!)) &&
+	       candidateKeys.every((key, keyIndex) => !key || properKeys.indexOf(key) > properKeys.indexOf(candidateKeys[keyIndex - 1]!)) &&
 	       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
 	       [...filteredEntries(gamePosition.whitePosition), ...filteredEntries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => pieceEntry[1].states.reduce((accumulator, current) => ({
 		       x: 1,

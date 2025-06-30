@@ -13,7 +13,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"lib": ["ESNext"],
 		"incremental": true,
-		"noEmitOnError": true,
+		"noEmitOnError": false,
 		"noErrorTruncation": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
