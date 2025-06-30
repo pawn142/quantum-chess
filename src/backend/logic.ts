@@ -231,17 +231,17 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	if (!(movedPiece && (getTypeOfMove(declaredMove.move) || isStandardMove(declaredMove.move) && isInRange(declaredMove.move, movedPiece) && (!declaredMove.move.end.promotion || declaredMove.move.end.y === (data.whoseTurn === Sides.white ? 8 : 1) && actualType(movedPiece) === Pieces.pawn)))) {
 		return false;
 	}
-	const result: CompletedPosition = getResultOfMove(declaredMove.move, completedPos, true);
+	const moveResult: CompletedPosition = getResultOfMove(declaredMove.move, completedPos, true);
 	let current: boolean = movedPiece.pieceType.side === data.whoseTurn &&
 	                       !isEndpointBlocked(declaredMove.move, completedPos) &&
-	                       !(winByCheckmate && isInCheck(result, data.whoseTurn)) &&
+	                       !(winByCheckmate && isInCheck(moveResult, data.whoseTurn)) &&
 	                       declaredMove.declarations.isSubsetOf(allDeclarations) &&
 	                       declaredMove.declarations.isSupersetOf(getRequiredDeclarations(declaredMove.move, actualType(movedPiece))) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.nonLeaping) && isBlocked(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.noCapture) && isCapture(declaredMove.move, completedPos)) &&
 	                       !(declaredMove.declarations.has(MoveDeclarations.captureOnly) && !isCapture(declaredMove.move, completedPos)) &&
-	                       !(declaredMove.declarations.has(MoveDeclarations.noCheck) && isInCheck(result, otherSide(data.whoseTurn))) &&
-	                       !(declaredMove.declarations.has(MoveDeclarations.checkOnly) && !isInCheck(result, otherSide(data.whoseTurn)));
+	                       !(declaredMove.declarations.has(MoveDeclarations.noCheck) && isInCheck(moveResult, otherSide(data.whoseTurn))) &&
+	                       !(declaredMove.declarations.has(MoveDeclarations.checkOnly) && !isInCheck(moveResult, otherSide(data.whoseTurn)));
 	switch (getTypeOfMove(declaredMove.move)) {
 		case SpecialMoves.castle:
 			current &&= data.whoseTurn === (declaredMove.move as CastleMove).side && Math.abs((declaredMove.move as CastleMove).direction) === 1 && data.castling[getCastleProperty(declaredMove.move as CastleMove)] && !(winByCheckmate && isInCheck(completedPos, data.whoseTurn));
