@@ -124,6 +124,10 @@ export default class Fraction {
 		return Fraction.difference(this, other).numerator === 0;
 	}
 
+	value(): number {
+		return this.numerator / this.denominator;
+	}
+
 	static fractionalClone<T>(obj: T): T {
 		if (obj instanceof Fraction) {
 			return new Fraction(obj.numerator, obj.denominator) as T;

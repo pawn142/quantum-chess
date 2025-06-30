@@ -25,17 +25,17 @@ export function chooseElement<T>(array: T[]): T {
 }
 
 export interface PositionedObject {
-	position: {
+	state: {
 		probability: Fraction;
 	}
 }
 
 export function chooseWeightedElement<T>(array: (PositionedObject & T)[]): PositionedObject & T {
 	assert(array.length, "Empty array passed into 'chooseWeightedElement'");
-	const commonMultiple = Fraction.expanded_lcm(...array.map(element => element.position.probability.denominator));
+	const commonMultiple = Fraction.expanded_lcm(...array.map(element => element.state.probability.denominator));
 	let current: number = random(commonMultiple);
 	for (const element of array) {
-		current -= element.position.probability.numerator * commonMultiple / element.position.probability.denominator;
+		current -= element.state.probability.numerator * commonMultiple / element.state.probability.denominator;
 		if (current < 0)  {
 			return element;
 		}
