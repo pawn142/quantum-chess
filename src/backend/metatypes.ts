@@ -3,7 +3,7 @@ import assert from "assert";
 import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, discardProbability, isCoord, validPromotions, ChessboardPosition, Coord, GameData, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord, MoveDeclarations } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {
-	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined && entry[1] !== null);
+	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined);
 }
 
 export const boardFiles: string[] = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;

@@ -297,6 +297,16 @@ export function objectsToFilledPosition(quantumPos: ObjectPosition): CompletedPo
 	};
 }
 
+export function objectsToSparsePosition(quantumPos: ObjectPosition): CompletedPosition {
+	return {
+		pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.filter(unit => unit.position.probability.equalTo(new Fraction)).map(unit => ({
+			pieceType: structuredClone(objectSet.pieceType),
+			position: discardProbability(unit.position),
+		}))),
+		otherData: quantumPos.otherData,
+	};
+}
+
 export type OptionalPiece = IndexedPiece | undefined;
 
 export type FullBoard = [OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece, OptionalPiece,

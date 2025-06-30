@@ -382,47 +382,52 @@ export function cleanEntanglements(units: PositionedPiece[], makeCopy: boolean =
 	return newUnits;
 }
 
-export function generateMeasurementResults(declaredMove: DeclaredMove, quantumPos: ObjectPosition, dependencies: Coord[], winByCheckmate: boolean = defaultSettings.winByCheckmate, measurementType: boolean = defaultSettings.measurementType, makeCopy: boolean = false): [ObjectPosition, boolean] {
+export function makeMeasurement(quantumPos: ObjectPosition, measurementType: boolean = defaultSettings.measurementType, dependency: Coord, makeCopy: boolean = false): ObjectPosition {
+	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+	const dependentUnit: PositionedPiece = findUnit(newQuantumPos, dependency)!;
+	const dependentObject: ObjectSet = findObject(newQuantumPos, dependency)!;
+	const measurementSet: PositionedPiece[] = [dependentUnit, ...dependentUnit.entangledTo.map(entangledCoord => findUnit(newQuantumPos, entangledCoord)!)];
+	const totalProbability: Fraction = Fraction.sum(...dependentObject.units.map(unit => unit.position.probability));
+	const innerProbability: Fraction = Fraction.sum(...measurementSet.map(unit => unit.position.probability));
+	if (measurementType) {
+		if (random(innerProbability.denominator) < innerProbability.numerator) {
+			dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(measurementSet)));
+			dependentObject.units.splice(1);
+				dependentObject.units[0]!.position.probability = new Fraction;
+		} else {
+			dependentObject.units.slice().reverse().forEach((unit, unitIndex, reversedArray) => {
+				if (measurementSet.includes(unit)) {
+					dependentObject.units.splice(reversedArray.length - unitIndex - 1, 1);
+				} else {
+					unit.position.probability.divide(Fraction.difference(new Fraction, innerProbability));
+				}
+			});
+		}
+	} else {
+		const selectedUnit: PositionedPiece = chooseWeightedElement(measurementSet);
+		selectedUnit.position.probability = innerProbability;
+		measurementSet.filter(unit => unit !== selectedUnit).forEach(unit => dependentObject.units.splice(dependentObject.units.indexOf(unit), 1));
+		if (selectedUnit === dependentUnit) {
+			if (random(totalProbability.denominator) < totalProbability.numerator) {
+				dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(dependentObject.units)));
+				dependentObject.units.splice(1);
+				dependentObject.units[0]!.position.probability = new Fraction;
+			} else {
+				newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(dependentObject), 1);
+			}
+		}
+	}
+	cleanEntanglements(dependentObject.units);
+	return newQuantumPos;
+}
+
+export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate, measurementType: boolean = defaultSettings.measurementType, dependencies: Coord[] = generateDependencies(declaredMove, quantumPos, winByCheckmate), makeCopy: boolean = false): [ObjectPosition, boolean] {
 	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(declaredMove.move);
 	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
 	const playedObject: ObjectSet = findObject(newQuantumPos, significantSquares[0])!;
 	const possiblePositions: CompletedPosition[] = generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.position, significantSquares[0])));
 	while (possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate))) {
-		const chosenDependency: Coord = dependencies.splice(random(dependencies.length), 1)[0]!;
-		const dependentUnit: PositionedPiece = findUnit(newQuantumPos, chosenDependency)!;
-		const dependentObject: ObjectSet = findObject(newQuantumPos, chosenDependency)!;
-		const measurementSet: PositionedPiece[] = [dependentUnit, ...dependentUnit.entangledTo.map(entangledCoord => findUnit(newQuantumPos, entangledCoord)!)];
-		const totalProbability: Fraction = Fraction.sum(...dependentObject.units.map(unit => unit.position.probability));
-		const innerProbability: Fraction = Fraction.sum(...measurementSet.map(unit => unit.position.probability));
-		if (measurementType) {
-			if (random(innerProbability.denominator) < innerProbability.numerator) {
-				dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(measurementSet)));
-				dependentObject.units.splice(1);
-				dependentObject.units[0]!.position.probability = new Fraction;
-			} else {
-				dependentObject.units.slice().reverse().forEach((unit, unitIndex, reversedArray) => {
-					if (measurementSet.includes(unit)) {
-						dependentObject.units.splice(reversedArray.length - unitIndex - 1, 1);
-					} else {
-						unit.position.probability.divide(Fraction.difference(new Fraction, innerProbability));
-					}
-				});
-			}
-		} else {
-			const selectedUnit: PositionedPiece = chooseWeightedElement(measurementSet);
-			selectedUnit.position.probability = innerProbability;
-			measurementSet.filter(unit => unit !== selectedUnit).forEach(unit => dependentObject.units.splice(dependentObject.units.indexOf(unit), 1));
-			if (selectedUnit === dependentUnit) {
-				if (random(totalProbability.denominator) < totalProbability.numerator) {
-					dependentObject.units.splice(0, dependentObject.units.indexOf(chooseWeightedElement(dependentObject.units)));
-					dependentObject.units.splice(1);
-					dependentObject.units[0]!.position.probability = new Fraction;
-				} else {
-					newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(dependentObject), 1);
-				}
-			}
-		}
-		cleanEntanglements(dependentObject.units);
+		makeMeasurement(newQuantumPos, measurementType, dependencies.splice(random(dependencies.length), 1)[0]!);
 	}
 	return [newQuantumPos, isMoveLegal(declaredMove, possiblePositions[0]!, winByCheckmate)];
 }
