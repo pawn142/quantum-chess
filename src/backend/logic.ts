@@ -4,7 +4,7 @@ import { actualType, addProbability, allDeclarations, areCoordsEqual, areOfDiffe
 import { defaultSettings, getAllowedDeclarations, getCastleValues, objectsToGamePosition, Settings} from "./metatypes.js";
 import { chooseWeightedElement, random } from "./random.js";
 
-export const epsilon: number = 1e-12 as const;
+export const epsilon: 1e-12 = 1e-12 as const;
 
 export function isInRange(move: StandardMove, piece: CompletedSet | keyof typeof Pieces, side: keyof typeof Sides = typeof piece === "string" ? Sides.white : piece.pieceType.side): boolean {
 	if (areCoordsEqual(move.start, move.end)) {
