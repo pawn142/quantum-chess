@@ -415,7 +415,7 @@ export function cleanEntanglements(units: PositionedPiece[], makeCopy: boolean =
 	return newUnits;
 }
 
-export function makeMeasurement(quantumPos: ObjectPosition, measurementType: boolean = defaultSettings.measurementType, dependency: Coord, makeCopy: boolean = false): ObjectPosition {
+export function makeMeasurement(quantumPos: ObjectPosition, measurementType: boolean = defaultSettings.measurementType, dependency: Coord, makeCopy: boolean = false): [ObjectPosition, boolean] {
 	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
 	const dependentUnit: PositionedPiece = findUnit(newQuantumPos, dependency)!;
 	const dependentObject: ObjectSet = findObject(newQuantumPos, dependency)!;
@@ -451,7 +451,7 @@ export function makeMeasurement(quantumPos: ObjectPosition, measurementType: boo
 		}
 	}
 	cleanEntanglements(dependentObject.units);
-	return newQuantumPos;
+	return [newQuantumPos, dependentObject.some(unit => areCoordsEqual(unit.state, dependency)];
 }
 
 export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate, measurementType: boolean = defaultSettings.measurementType, dependencies: Coord[] = generateDependencies(declaredMove, quantumPos, winByCheckmate), makeCopy: boolean = false): [ObjectPosition, boolean] {
@@ -490,7 +490,7 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 				defaultBuildup.add(Fraction.quotient(unit.state.probability, new Fraction(localPrimaries.length)));
 			}
 		}
-		if (localDefault && new Fraction(0).lessThan(defaultBuildup) && generateMoveResults(localDefault, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
+		if (localDefault && defaultBuildup.numerator > 0 && generateMoveResults(localDefault, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
 			makeMove(localDefault.move, newQuantumPos);
 		}
 		unit.state.probability = defaultBuildup;
