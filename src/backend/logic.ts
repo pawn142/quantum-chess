@@ -130,9 +130,12 @@ export function isEndpointBlocked(move: Move, completedPos: CompletedPosition): 
 	return findPiece(completedPos, significantSquares[0])!.pieceType.side === findPiece(completedPos, significantSquares[2])?.pieceType?.side;
 }
 
+export function getCapturedSquare(move: Move): Coord {
+	return getTypeOfMove(move) === SpecialMoves.enpassant ? translateCoord((move as Enpassant).captureSquare, 0, (move as Enpassant).captureSquare.y === 3 ? 1 : -1, true) : generateStartMiddleEnd(move)[2];
+}
+
 export function isCapture(move: Move, completedPos: CompletedPosition): boolean {
-	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(move);
-	return otherSide(findPiece(completedPos, significantSquares[0])!.pieceType.side) === findPiece(completedPos, significantSquares[2])?.pieceType?.side;
+	return otherSide(findPiece(completedPos, generateStartMiddleEnd(move)[0])!.pieceType.side) === findPiece(completedPos, getCapturedSquare(move))?.pieceType?.side;
 }
 
 export function getLeapCheckingPieces(completedPos: CompletedPosition, whoseTurn: keyof typeof Sides = completedPos.otherData?.whoseTurn ?? defaultData.whoseTurn, kingCoord: Coord | undefined = findPieceFromType(completedPos, Pieces.king, whoseTurn)?.state): CompletedSet[] {
@@ -184,10 +187,6 @@ export function makeMove(move: Move, position: CompletedPosition | ObjectPositio
 				throw new Error("Unidentified move passed into 'getResultOfMove'");
 		}
 	}
-}
-
-export function getCapturedSquare(move: Move): Coord {
-	return getTypeOfMove(move) === SpecialMoves.enpassant ? translateCoord((move as Enpassant).captureSquare, 0, (move as Enpassant).captureSquare.y === 3 ? 1 : -1, true) : generateStartMiddleEnd(move)[2];
 }
 
 export function getResultOfMove(move: Move, completedPos: CompletedPosition, makeCopy: boolean = false): CompletedPosition {
@@ -458,8 +457,7 @@ export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: Obje
 	const significantSquares: [Coord, Coord[], Coord] = generateStartMiddleEnd(declaredMove.move);
 	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
 	const playedObject: ObjectSet = findObject(newQuantumPos, significantSquares[0])!;
-	const possiblePositions: CompletedPosition[] = generatePossiblePositions(quantumPos, quantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.state, significantSquares[0])));
-	while (possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate))) {
+	while (generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), playedObject.units.findIndex(unit => areCoordsEqual(unit.state, significantSquares[0]))).some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate))) {
 		makeMeasurement(newQuantumPos, measurementType, dependencies.splice(random(dependencies.length), 1)[0]!);
 	}
 	return [newQuantumPos, isMoveLegal(declaredMove, possiblePositions[0]!, winByCheckmate)];
@@ -504,5 +502,6 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	newQuantumPos.otherData.castling.canWhiteCastleRight &&= castleValues[1];
 	newQuantumPos.otherData.castling.canBlackCastleLeft  &&= castleValues[2];
 	newQuantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
+	newQuantumPos.otherData.qubits[quantumPos.otherData.whoseTurn === Sides.white ? "whiteBalance" : "blackBalance"] -= calculateQubitCost(play, quantumPos, settings.advancedQubitMode);
 	return newQuantumPos;
 }
