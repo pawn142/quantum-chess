@@ -1,6 +1,6 @@
 import Fraction from "./arithmetic.js";
 import assert from "assert";
-import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, coordToIndex, defaultData, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getRespectiveQubitAmount, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, translateCoord, getCoordType, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
+import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getRespectiveQubitAmount, getTypeOfMove, isStandardMove, objectsToFilledPosition, otherSide, translateCoord, getCoordType, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
 import { defaultSettings, getAllowedDeclarations, getCastleValues, objectsToGamePosition, Settings} from "./metatypes.js";
 import { chooseWeightedElement, random } from "./random.js";
 
@@ -552,4 +552,13 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	newQuantumPos.otherData.castling.canBlackCastleLeft  &&= castleValues[2];
 	newQuantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
 	return newQuantumPos;
+}
+
+export function initializePosition(unlimitedQubits: boolean = defaultSettings.unlimitedQubits): ObjectPosition {
+	const initialPos: ObjectPosition = completedPositionToObjects(defaultPosition);
+	if (unlimitedQubits) {
+		initialPos.otherData.qubits.whiteBalance = Infinity;
+		initialPos.otherData.qubits.blackBalance = Infinity;
+	}
+	return initialPos;
 }
