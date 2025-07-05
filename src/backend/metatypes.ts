@@ -219,7 +219,7 @@ export function getPositionFromString(stateString: string): GamePosition {
 	};
 }
 
-function keyToPiece(key: string): keyof typeof Pieces {
+export function keyToPiece(key: string): keyof typeof Pieces {
 	switch (key[0]) {
 		case "p":
 			return Pieces.pawn;

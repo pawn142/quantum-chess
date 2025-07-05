@@ -357,24 +357,24 @@ export class ChessboardPosition {
 	squares: FullBoard;
 
 	constructor(objectPosition: ObjectSet[]) {
-		const pieces: ColoredPiece[] = [];
-		const squares: FullBoard = Array(64).fill(undefined) as FullBoard;
+		const currentPieces: ColoredPiece[] = [];
+		const currentSquares: FullBoard = Array(64).fill(undefined) as FullBoard;
 		for (const objectSet of objectPosition) {
 			for (const unit of objectSet.units) {
 				const squareIndex = coordToIndex(discardProbability(unit.state));
 				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardProbability(otherPiece.state))));
-				assert(squares[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
+				assert(currentSquares[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
 				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
-				squares[squareIndex] = {
-					ofIndex: pieces.length,
+				currentSquares[squareIndex] = {
+					ofIndex: currentPieces.length,
 					entangledTo: structuredClone(unit.entangledTo),
 					promotion: unit.state.promotion,
 				};
 			}
-			pieces.push(structuredClone(objectSet.pieceType));
+			currentPieces.push(structuredClone(objectSet.pieceType));
 		}
-		this.fullPieces = pieces;
-		this.squares = squares;
+		this.fullPieces = currentPieces;
+		this.squares = currentSquares;
 	}
 }
 
