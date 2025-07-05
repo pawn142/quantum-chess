@@ -223,8 +223,8 @@ export interface ObjectPosition {
 	otherData: GameData;
 }
 
-export function findUnit(quantumPos: ObjectPosition, coord: Coord): PositionedPiece | undefined {
-	return quantumPos.objects.flatMap(objectSet => objectSet.units).find(unit => areCoordsEqual(unit.state, coord));
+export function findUnit(objects: ObjectSet[], coord: Coord): PositionedPiece | undefined {
+	return objects.flatMap(objectSet => objectSet.units).find(unit => areCoordsEqual(unit.state, coord));
 }
 
 export function findObject(quantumPos: ObjectPosition, coord: Coord): ObjectSet | undefined {
@@ -232,7 +232,7 @@ export function findObject(quantumPos: ObjectPosition, coord: Coord): ObjectSet 
 }
 
 export function getCoordType(quantumPos: ObjectPosition, coord: Coord): keyof typeof Pieces | undefined {
-	return findUnit(quantumPos, coord)?.state.promotion ?? findObject(quantumPos, coord)?.pieceType.type_p;
+	return findUnit(quantumPos.objects, coord)?.state.promotion ?? findObject(quantumPos, coord)?.pieceType.type_p;
 }
 
 export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
@@ -355,25 +355,26 @@ export function indexToCoord(index: number): Coord {
 export class ChessboardPosition {
 	fullPieces: ColoredPiece[];
 	squares: FullBoard;
+
 	constructor(objectPosition: ObjectSet[]) {
-		const pieceArray: ColoredPiece[] = [];
-		const squareArray: FullBoard = Array(64).fill(undefined) as FullBoard;
+		const pieces: ColoredPiece[] = [];
+		const squares: FullBoard = Array(64).fill(undefined) as FullBoard;
 		for (const objectSet of objectPosition) {
 			for (const unit of objectSet.units) {
 				const squareIndex = coordToIndex(discardProbability(unit.state));
 				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardProbability(otherPiece.state))));
-				assert(squareArray[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
+				assert(squares[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
 				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
-				squareArray[squareIndex] = {
-					ofIndex: pieceArray.length,
+				squares[squareIndex] = {
+					ofIndex: pieces.length,
 					entangledTo: structuredClone(unit.entangledTo),
 					promotion: unit.state.promotion,
 				};
 			}
-			pieceArray.push(structuredClone(objectSet.pieceType));
+			pieces.push(structuredClone(objectSet.pieceType));
 		}
-		this.fullPieces = pieceArray;
-		this.squares = squareArray;
+		this.fullPieces = pieces;
+		this.squares = squares;
 	}
 }
 

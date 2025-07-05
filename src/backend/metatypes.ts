@@ -28,9 +28,9 @@ export class Entanglement {
 		} else if (obj instanceof Entanglement) {
 			return new Entanglement(obj.fromIndex, obj.toIndex) as T;
 		} else if (Array.isArray(obj)) {
-			return obj.map(element => Fraction.fractionalClone(element)) as T;
+			return obj.map(element => Entanglement.entangledClone(element)) as T;
 		} else if (typeof obj === "object" && obj !== null) {
-			return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, Fraction.fractionalClone(value)])) as T;
+			return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, Entanglement.entangledClone(value)])) as T;
 		} else {
 			return obj;
 		}
@@ -193,23 +193,23 @@ export function getPositionFromString(stateString: string): GamePosition {
 	const whitePositionArray: [string, PieceSet][] = [];
 	const blackPositionArray: [string, PieceSet][] = [];
 	for (const pieceString of components.slice(1)) {
-		const stateArray: WeightedCoord[] = [];
-		const entanglementArray: Entanglement[] = [];
+		const pieceStates: WeightedCoord[] = [];
+		const entanglements: Entanglement[] = [];
 		for (const segment of pieceString.split(" ").slice(1)) {
 			if (segment[0] === "(") {
-				stateArray.push({
+				pieceStates.push({
 					x: boardFiles.indexOf(segment[1]!) + 1 as PartialCoord,
 					y: parseInt(segment[2]!) as PartialCoord,
 					promotion: Pieces[segment.split(",")[2]?.slice(0, -1) as keyof typeof Pieces],
 					probability: new Fraction(parseInt(segment.split(",")[1]!.split("/")[0]!), parseInt(segment.split(",")[1]!.split("/")[1]!)),
 				});
 			} else {
-				entanglementArray.push(new Entanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!), stateArray));
+				entanglements.push(new Entanglement(parseInt(segment.split("-")[0]!.slice(1)), parseInt(segment.split("-")[1]!), pieceStates));
 			}
 		}
 		(pieceString[0] === pieceString[0]!.toLowerCase() ? blackPositionArray : whitePositionArray).push([pieceString.slice(0, 2).toLowerCase(), {
-			states: stateArray,
-			entanglements: entanglementArray,
+			states: pieceStates,
+			entanglements: entanglements,
 		}]);
 	}
 	return {
