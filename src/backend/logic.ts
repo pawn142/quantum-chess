@@ -545,12 +545,12 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 			newQuantumPos.otherData.qubits[quantumPos.otherData.whoseTurn === Sides.white ? "whiteBalance" : "blackBalance"] = Math.round(qubitAmount);
 		}
 	})(getRespectiveQubitAmount(newQuantumPos.otherData));
-	newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
 	const castleValues: [boolean, boolean, boolean, boolean] = getCastleValues(objectsToGamePosition(newQuantumPos));
 	newQuantumPos.otherData.castling.canWhiteCastleLeft  &&= castleValues[0]; 
 	newQuantumPos.otherData.castling.canWhiteCastleRight &&= castleValues[1];
 	newQuantumPos.otherData.castling.canBlackCastleLeft  &&= castleValues[2];
 	newQuantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
+	newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
 	return newQuantumPos;
 }
 
