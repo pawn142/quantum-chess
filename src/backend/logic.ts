@@ -554,7 +554,7 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	return newQuantumPos;
 }
 
-export function initializePosition(unlimitedQubits: boolean = defaultSettings.unlimitedQubits): ObjectPosition {
+export function initializeObjectPosition(unlimitedQubits: boolean = defaultSettings.unlimitedQubits): ObjectPosition {
 	const initialPos: ObjectPosition = completedPositionToObjects(defaultPosition);
 	if (unlimitedQubits) {
 		initialPos.otherData.qubits.whiteBalance = Infinity;
