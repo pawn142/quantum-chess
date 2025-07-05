@@ -388,7 +388,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 	const filledPos: CompletedPosition = objectsToFilledPosition(quantumPos);
 	filledPos.pieces = filledPos.pieces.filter(completedPiece => areCoordsEqual(completedPiece.state, significantSquares[0]) || areOfDifferentObjects(quantumPos, completedPiece.state, significantSquares[0]));
 	if (declaredMove.declarations.has(MoveDeclarations.captureOnly) || declaredMove.declarations.has(MoveDeclarations.noCapture) || isEndpointBlocked(declaredMove.move, filledPos)) {
-		currentDependencies.push(translateCoord(significantSquares[2], 0, getTypeOfMove(declaredMove.move) === SpecialMoves.enpassant ? -enpassantDisplacement(quantumPos.otherData.whoseTurn) : 0));
+		currentDependencies.push(getCapturedSquare(declaredMove.move));
 	}
 	if (declaredMove.declarations.has(MoveDeclarations.nonLeaping)) {
 		currentDependencies.push(...significantSquares[1].filter(coord => areOfDifferentObjects(quantumPos, coord, significantSquares[0])));
