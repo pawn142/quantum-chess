@@ -329,9 +329,9 @@ export function isValidPositionString(stringCandidate: string): boolean {
 	}
 }
 
-export function isValidStartingPosition(stateCandidate: GamePosition): boolean {
+export function isValidStartingPosition(positionCandidate: GamePosition): boolean {
 	try {
-		return isValidPositionString(getPositionString(stateCandidate));
+		return isValidPositionString(getPositionString(positionCandidate));
 	} catch {
 		return false;
 	}
@@ -377,6 +377,6 @@ export const defaultSettings: Settings = {
 	measurementType: true,
 } as const;
 
-export function getAllowedDeclarations(settings: Settings): Set<keyof typeof MoveDeclarations> {
+export function allowedDeclarations(settings: Settings): Set<keyof typeof MoveDeclarations> {
 	return new Set([...allDeclarations].filter(declaration => settings.allowedMoveDeclarations[declaration]));
 }

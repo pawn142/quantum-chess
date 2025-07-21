@@ -404,6 +404,10 @@ export function enpassantDisplacement(side: keyof typeof Sides): number {
 	return side === Sides.white ? 1 : -1;
 }
 
+export function promotionRank(side: keyof typeof Sides): number {
+	return side === Sides.white ? 8 : 1;
+}
+
 export interface PawnDoubleMove {
 	pushedPawn: Coord;
 }
@@ -416,7 +420,7 @@ export const SpecialMoves = {
 	pawnDoubleMove: "pawnDoubleMove",
 } as const;
 
-export function getTypeOfMove(move: object): keyof typeof SpecialMoves | false {
+export function moveType(move: object): keyof typeof SpecialMoves | false {
 	switch (JSON.stringify(Object.keys(move))) {
 		case '["side","direction"]':
 			return SpecialMoves.castle;
