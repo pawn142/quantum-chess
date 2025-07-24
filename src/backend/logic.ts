@@ -334,7 +334,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	assert(playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
 	const problems: Set<string> = new Set;
 	if (!play.primaryMoves.length && !settings.nullPlays) {
-		problems.add("Null plays are not allowed");
+		problems.add("Null plays are not allowed in settings");
 	}
 	if (play.primaryMoves.filter(declaredMove => moveType(declaredMove.move) === SpecialMoves.pawnDoubleMove).length > 1) {
 		problems.add("Only one pawn double move per play");
