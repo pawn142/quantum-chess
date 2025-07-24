@@ -339,6 +339,7 @@ export function isValidStartingPosition(positionCandidate: GamePosition): boolea
 
 export interface Settings {
 	winByCheckmate: boolean;
+	nullPlays: boolean;
 	allowCastling: boolean;
 	castleSplitting: boolean;
 	pawnDoubleMoveSplitting: boolean;
@@ -359,6 +360,7 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
 	winByCheckmate: false,
+	nullPlays: true,
 	allowCastling: true,
 	castleSplitting: false,
 	pawnDoubleMoveSplitting: false,
@@ -377,6 +379,10 @@ export const defaultSettings: Settings = {
 	measurementType: true,
 } as const;
 
-export function allowedDeclarations(settings: Settings): Set<keyof typeof MoveDeclarations> {
+export function allowedDeclarations(settings: Settings = defaultSettings): Set<keyof typeof MoveDeclarations> {
 	return new Set([...allDeclarations].filter(declaration => settings.allowedMoveDeclarations[declaration]));
+}
+
+export function measureThisCapture(rawType: keyof typeof Pieces, settings: Settings = defaultSettings): boolean {
+	return rawType === Pieces.king ? settings.measureKingCaptures : settings.measurePieceCaptures;
 }
