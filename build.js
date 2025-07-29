@@ -1,10 +1,7 @@
 import ts from "typescript";
 import path from "path";
 
-const rootDir = "src";
-const outDir = "dist";
-
-const configPath = ts.findConfigFile(rootDir, ts.sys.fileExists, "tsconfig.json");
+const configPath = ts.findConfigFile("src", ts.sys.fileExists, "tsconfig.json");
 
 const config = ts.parseJsonConfigFileContent(
 	ts.readConfigFile(configPath, ts.sys.readFile).config,
@@ -18,8 +15,8 @@ const program = ts.createProgram({
 	rootNames: config.fileNames,
 	options: {
 		...config.options,
-		rootDir: rootDir,
-		outDir: outDir,
+		rootDir: "src",
+		outDir: "dist",
 		noEmit: false,
 	},
 });
