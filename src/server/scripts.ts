@@ -14,7 +14,7 @@ export function getPieceImage(pieceType: keyof typeof piece.Pieces, side: keyof 
 }
 
 export function showPosition(objectPosition: piece.ObjectPosition): void {
-	for (let i = 1; i <= 64; ++i) {
+	for (let i = 0; i < 64; ++i) {
 		const unitDiv: HTMLDivElement | null = document.getElementById(i.toString());
 		if (unitDiv) {
 			unitDiv.remove();
