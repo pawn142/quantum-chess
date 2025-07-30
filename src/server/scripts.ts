@@ -13,13 +13,18 @@ export function getPieceImage(pieceType: keyof typeof piece.Pieces, side: keyof 
 	return `assets/piece assets/${pieceType + side[0].toUpperCase()}.png`;
 }
 
-export function showPosition(objectPosition: piece.ObjectPosition): void {
+export function clearBoard(): void {
 	for (let i = 0; i < 64; ++i) {
 		const unitDiv: HTMLDivElement | null = document.getElementById(i.toString());
 		if (unitDiv) {
 			unitDiv.remove();
 		}
 	}
+	window.objects = [];
+}
+
+export function showPosition(objectPosition: piece.ObjectPosition): void {
+	clearBoard();
 	for (const object of objectPosition.objects) {
 		for (const unit of object.units) {
 			const unitDiv: HTMLDivElement = document.createElement("div");
@@ -39,7 +44,7 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 			unitDiv.append(unitImg);
 		}
 	}
-	window.position = objectPosition;
+	window.objects = objectPosition.objects;
 }
 
 export function setup(): void {
