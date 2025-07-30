@@ -44,8 +44,7 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 
 export function setup(): void {
 	random.clear();
-	window.position = piece.completedPositionToObjects(piece.defaultPosition);
 	window.settings = meta.defaultSettings;
 	window.board = document.getElementById("board");
-	showPosition(window.position);
+	showPosition(piece.completedPositionToObjects(piece.defaultPosition));
 }
