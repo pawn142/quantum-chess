@@ -1,5 +1,5 @@
 import Fraction from "./arithmetic.js";
-import assert from "assert";
+import assert from "../assert.js";
 
 const bitstream: (0 | 1)[] = [];
 

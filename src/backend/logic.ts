@@ -1,5 +1,5 @@
 import Fraction from "./arithmetic.js";
-import assert from "assert";
+import assert from "../assert.js";
 import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, isStandardMove, moveType, objectsToFilledPosition, otherSide, promotionRank, translateCoord, validPromotions, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
 import { allowedDeclarations, defaultSettings, getCastleValues, measureThisCapture, objectsToGamePosition, Settings} from "./metatypes.js";
 import { chooseElement, chooseWeightedElement, random } from "./random.js";
@@ -339,7 +339,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	if (play.primaryMoves.filter(declaredMove => moveType(declaredMove.move) === SpecialMoves.pawnDoubleMove).length > 1) {
 		problems.add("Only one pawn double move per play");
 	}
-	const unitPositions: Set<string> = new Set(playedObject.units.map(unit => JSON.stringify(discardPromotion(unit.state))));
+	const unitPositions: Set<string> = new Set(playedObject!.units.map(unit => JSON.stringify(discardPromotion(unit.state))));
 	if (play.primaryMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
 		problems.add("One or more primary moves are impossible");
 	}
@@ -355,7 +355,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	if (getRespectiveQubitAmount(quantumPos.otherData) - calculateQubitCost(play, quantumPos, settings.advancedQubitMode) < -epsilon) {
 		problems.add("Not enough qubits");
 	}
-	playedObject.units.forEach((unit, unitIndex) => {
+	playedObject!.units.forEach((unit, unitIndex) => {
 		const localPrimaries: DeclaredMove[] = getLocalMoves(play.primaryMoves, unit.state);
 		const localDefaults: DeclaredMove[] = getLocalMoves(play.defaultMoves, unit.state);
 		if (localDefaults.length > 1) {

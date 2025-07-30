@@ -1,5 +1,5 @@
 import Fraction from "./arithmetic.js";
-import assert from "assert";
+import assert from "../assert.js";
 import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, discardProbability, enpassantDisplacement, isCoord, translateCoord, validPromotions, ChessboardPosition, Coord, GameData, MoveDeclarations, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {

@@ -11,7 +11,7 @@
 		"esModuleInterop": true,
 		"exactOptionalPropertyTypes": false,
 		"forceConsistentCasingInFileNames": true,
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "dom"],
 		"incremental": true,
 		"noEmitOnError": false,
 		"noErrorTruncation": true,
@@ -28,9 +28,8 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"rootDir": "src",
-		"outDir": "dist",
-		"tsBuildInfoFile": "dist/buildinfo"
+		"outDir": "src/dist",
+		"tsBuildInfoFile": "src/dist/buildinfo"
 	},
 	"include": [ "src/" ],
-	"exclude": []
 }

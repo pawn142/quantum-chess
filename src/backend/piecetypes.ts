@@ -1,5 +1,5 @@
-import Fraction from './arithmetic.js';
-import assert from 'assert';
+import Fraction from "./arithmetic.js";
+import assert from "../assert.js";
 
 export function isObject(candidate: any): boolean {
 	return typeof candidate === "object" && candidate !== null && !Array.isArray(candidate);

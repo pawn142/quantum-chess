@@ -4,7 +4,7 @@ import parserTypescript from "@typescript-eslint/parser";
 export default [
 	{
 		files: [ "**/*.js", "**/*.ts" ],
-		ignores: [ "dist/**/*" ],
+		ignores: [ "src/dist/**/*" ],
 		rules: {
 			"no-undef": "off",
 			"no-unused-vars": "warn",

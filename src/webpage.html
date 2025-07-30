@@ -1,23 +1,28 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>
-			Quantum Chess
-		</title>
+		<title>Quantum Chess</title>
 		<style>
-			.board {
-				height: 80%;
+			#board {
 				position: absolute;
 				left: 50%;
 				top: 50%;
 				translate: -50% -50%;
+				height: 80%;
+			}
+
+			.board-img {
+				height: 100%;
 			}
 		</style>
+		<script type="module" src="dist/server/window adder.js"></script>
 	</head>
-	<body>
-		<img class="board" src="assets/other assets/board.png">
+	<body onload="setup()">
+		<div id="board">
+			<img class="board-img" src="assets/other assets/board.png">
+		</div>
 	</body>
 </html>

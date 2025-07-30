@@ -15,9 +15,6 @@ const program = ts.createProgram({
 	rootNames: config.fileNames,
 	options: {
 		...config.options,
-		rootDir: "src",
-		outDir: "dist",
-		noEmit: false,
 	},
 });
 
