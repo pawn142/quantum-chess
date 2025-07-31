@@ -1,5 +1,6 @@
 import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
+
 import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, discardProbability, enpassantDisplacement, isCoord, translateCoord, validPromotions, ChessboardPosition, Coord, GameData, MoveDeclarations, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {
@@ -337,7 +338,7 @@ export function isValidStartingPosition(positionCandidate: GamePosition): boolea
 	}
 }
 
-export interface Settings {
+export interface GameSettings {
 	winByCheckmate: boolean;
 	nullPlays: boolean;
 	allowCastling: boolean;
@@ -358,7 +359,7 @@ export interface Settings {
 	measurementType: boolean;
 }
 
-export const defaultSettings: Settings = {
+export const defaultSettings: GameSettings = {
 	winByCheckmate: false,
 	nullPlays: true,
 	allowCastling: true,
@@ -379,10 +380,10 @@ export const defaultSettings: Settings = {
 	measurementType: true,
 } as const;
 
-export function allowedDeclarations(settings: Settings = defaultSettings): Set<keyof typeof MoveDeclarations> {
+export function allowedDeclarations(settings: GameSettings = defaultSettings): Set<keyof typeof MoveDeclarations> {
 	return new Set([...allDeclarations].filter(declaration => settings.allowedMoveDeclarations[declaration]));
 }
 
-export function measureThisCapture(rawType: keyof typeof Pieces, settings: Settings = defaultSettings): boolean {
+export function measureThisCapture(rawType: keyof typeof Pieces, settings: GameSettings = defaultSettings): boolean {
 	return rawType === Pieces.king ? settings.measureKingCaptures : settings.measurePieceCaptures;
 }

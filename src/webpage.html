@@ -6,23 +6,82 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Quantum Chess Editor</title>
 		<style>
+			body {
+				background-image: url("assets/other assets/quantum.png");
+				background-size: cover;
+				background-repeat: no-repeat;
+				background-attachment: fixed;
+				font-family: verdana;
+			}
+
+			p, button {
+				margin: 0;
+				padding: 0;
+			}
+
 			#board {
 				position: absolute;
-				left: 50%;
 				top: 50%;
+				left: 50%;
 				translate: -50% -50%;
-				height: 80%;
+				height: 70%;
+				aspect-ratio: 1 / 1;
+			}
+
+			#turn-counter {
+				position: absolute;
+				top: 8%;
+				left: 50%;
+				translate: -50%;
+				font-size: 24px;
+			}
+
+			#coordinates {
+				position: absolute;
+				left: 0;
 			}
 
 			.board-img {
 				height: 100%;
 			}
+
+			.coordinate-light {
+				fill: #739552;
+			}
+
+			.coordinate-dark {
+				fill: #EBECD0;
+			}
+
+			.coordinate-light, .coordinate-dark {
+				font-family: sans-serif;
+				font-weight: 600;
+			}
 		</style>
 		<script type="module" src="dist/server/window adder.js"></script>
 	</head>
 	<body onload="setup()">
+		<p id="turn-counter"></p>
 		<div id="board">
 			<img class="board-img" src="assets/other assets/board.png">
+			<svg id="coordinates" width="100%" height="100%" viewBox="0 0 100 100">
+				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate-light">8</text>
+				<text x="0.75" y="15.75" font-size="2.8" class="coordinate-dark" >7</text>
+				<text x="0.75" y="28.25" font-size="2.8" class="coordinate-light">6</text>
+				<text x="0.75" y="40.75" font-size="2.8" class="coordinate-dark" >5</text>
+				<text x="0.75" y="53.25" font-size="2.8" class="coordinate-light">4</text>
+				<text x="0.75" y="65.75" font-size="2.8" class="coordinate-dark" >3</text>
+				<text x="0.75" y="78.25" font-size="2.8" class="coordinate-light">2</text>
+				<text x="0.75" y="90.75" font-size="2.8" class="coordinate-dark" >1</text>
+				<text x="10"   y="99"    font-size="2.8" class="coordinate-dark" >a</text>
+				<text x="22.5" y="99"    font-size="2.8" class="coordinate-light">b</text>
+				<text x="35"   y="99"    font-size="2.8" class="coordinate-dark" >c</text>
+				<text x="47.5" y="99"    font-size="2.8" class="coordinate-light">d</text>
+				<text x="60"   y="99"    font-size="2.8" class="coordinate-dark" >e</text>
+				<text x="72.5" y="99"    font-size="2.8" class="coordinate-light">f</text>
+				<text x="85"   y="99"    font-size="2.8" class="coordinate-dark" >g</text>
+				<text x="97.5" y="99"    font-size="2.8" class="coordinate-light">h</text>
+			</svg>
 		</div>
 	</body>
 </html>

@@ -1,7 +1,8 @@
 import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
+
 import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, isStandardMove, moveType, objectsToFilledPosition, otherSide, promotionRank, translateCoord, validPromotions, CastleMove, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, Play, PositionedPiece, Sides, SpecialMoves, StandardMove} from "./piecetypes.js";
-import { allowedDeclarations, defaultSettings, getCastleValues, measureThisCapture, objectsToGamePosition, Settings} from "./metatypes.js";
+import { allowedDeclarations, defaultSettings, getCastleValues, measureThisCapture, objectsToGamePosition, GameSettings} from "./metatypes.js";
 import { chooseElement, chooseWeightedElement, random } from "./random.js";
 
 export const epsilon: 1e-12 = 1e-12 as const;
@@ -329,7 +330,7 @@ export function calculateBoardValue(quantumPos: ObjectPosition, partialQubitRewa
 	return partialQubitRewards ? Fraction.sum(...quantumPos.objects.map(objectSet => objectSet.pieceType.side === side ? Fraction.sum(...objectSet.units.map(unit => unit.state.probability)) : new Fraction(0))).value() : quantumPos.objects.filter(objectSet => objectSet.pieceType.side === side).length;
 }
 
-export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings): Set<string> {
+export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settings: GameSettings = defaultSettings): Set<string> {
 	const playedObject: ObjectSet | undefined = quantumPos.objects[play.objectIndex];
 	assert(playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
 	const problems: Set<string> = new Set;
@@ -377,7 +378,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	return problems;
 }
 
-export function isPlayLegal(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings) {
+export function isPlayLegal(play: Play, quantumPos: ObjectPosition, settings: GameSettings = defaultSettings) {
 	return !checkPlayValidity(play, quantumPos, settings).size;
 }
 
@@ -491,7 +492,7 @@ export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: Obje
 	return [newQuantumPos, isMoveLegal(declaredMove, generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex)[0]!)];
 }
 
-export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: Settings = defaultSettings, makeCopy: boolean = false): ObjectPosition {
+export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: GameSettings = defaultSettings, makeCopy: boolean = false): ObjectPosition {
 	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
 	const playedObject: ObjectSet = newQuantumPos.objects[play.objectIndex]!;
 	const filledPos: CompletedPosition = objectsToFilledPosition(quantumPos);
