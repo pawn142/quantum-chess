@@ -569,7 +569,7 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	return newQuantumPos;
 }
 
-export function candidateMoves(rawType: keyof typeof Pieces, side: keyof typeof Sides, pieceCoord: Coord, enpassant: Coord | false = defaultData.enpassant): Move[] {
+export function candidateMoves(rawType: keyof typeof Pieces, side: keyof typeof Sides, pieceCoord: Coord, enpassant: Coord | false = defaultData.enpassant): DeclaredMove[] {
 	const currentMoves: Move[] = chessboard.flatMap(coord => rawType === Pieces.pawn && coord.y === promotionRank(side) ? [...validPromotions].map(promotion => ({
 		start: discardPromotion(pieceCoord),
 		end: Object.assign(structuredClone(coord), {
@@ -594,13 +594,16 @@ export function candidateMoves(rawType: keyof typeof Pieces, side: keyof typeof 
 			captureSquare: structuredClone(enpassant),
 		});
 	}
-	return currentMoves;
+	return currentMoves.map(candidateMove => ({
+		move: candidateMove,
+		declarations: getRequiredDeclarations(candidateMove, rawType),
+	}));
 }
 
 export function detectCheckmate(quantumPos: ObjectPosition, whoseTurn: keyof typeof Sides = defaultData.whoseTurn, enpassant: Coord | false = defaultData.enpassant): boolean {
 	let current: boolean = isInCheck(generatePossiblePositions(quantumPos)[0]!, whoseTurn);
 	quantumPos.objects.filter(objectSet => objectSet.pieceType.side === quantumPos.otherData.whoseTurn).forEach(objectSet => {
-		if (objectSet.units.every(unit => candidateMoves(getCoordType(quantumPos, unit.state)!, whoseTurn, unit.state), enpassant)) {
+		if (objectSet.units.every(unit => candidateMoves(getCoordType(quantumPos, unit.state)!, whoseTurn, unit.state, enpassant).some(move => isMoveAlwaysLegal(move, quantumPos, true)))) {
 			current &&= false;
 		}
 	});

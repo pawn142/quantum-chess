@@ -1,12 +1,13 @@
 import express from "express";
+import path from "path";
  
 export const app: express.Application = express();
 export const port: number = 3000;
 
-app.use(express.static("/quantum chess"));
+app.use(express.static(path.dirname("src")));
 
 app.get('/', (_req, _res) => {
-	_res.sendFile("webpage.html", { root: "pages" });
+	_res.sendFile("editor.html", { root: "pages" });
 });
 
 app.listen(port, () => {

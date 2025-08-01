@@ -4,13 +4,13 @@ export function getPieceImage(pieceType: keyof typeof Pieces, side: keyof typeof
 	return `assets/piece assets/${pieceType + side[0]!.toUpperCase()}.png`;
 }
 
-export interface visualSettings {
+export interface VisualSettings {
 	hideFullProbabilities: boolean;
 	fillRingCenters: boolean;
 	showCoordinates: boolean;
 }
 
-export const defaultVisuals: visualSettings = {
+export const defaultVisuals: VisualSettings = {
 	hideFullProbabilities: true,
 	fillRingCenters: false,
 	showCoordinates: false,

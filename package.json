@@ -4,7 +4,7 @@
 	"description": "quantum chess server",
 	"author": "inaccessibles",
 	"license": "AGPL",
-	"main": "dist/server/server.js",
+	"main": "dist/server.js",
 	"type": "module",
 	"dependencies": {
 		"express": "^5.1.0"

@@ -67,7 +67,7 @@ export function regeneratePosition(): void {
 export function setup(): void {
 	random.clear();
 	random.addRandomToStream(10000);
-	window.ringColor = "#FC8EAC";
+	window.ringColor = "fuchsia";
 	window.gameSettings = meta.defaultSettings;
 	window.visualSettings = tools.defaultVisuals;
 	window.board = document.getElementById("board");
@@ -85,8 +85,8 @@ export function setup(): void {
 		window["square" + piece.coordToIndex(coord)] = squareDiv;
 		const squareButton: HTMLButtonElement = tools.createCover(squareDiv, "button");
 		Object.assign(squareButton.style, {
-			visibility: "hidden",
 			border: "none",
+			"background-color": "transparent",
 			"z-index": "2",
 		});
 		window["button" + piece.coordToIndex(coord)] = squareButton;
