@@ -28,8 +28,8 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"rootDir": "src",
-		"outDir": "src/dist",
-		"tsBuildInfoFile": "src/dist/buildinfo"
+		"outDir": "dist",
+		"tsBuildInfoFile": "dist/buildinfo"
 	},
 	"include": [ "src/" ],
 }
