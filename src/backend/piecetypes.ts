@@ -6,12 +6,30 @@ export function isObject(candidate: any): boolean {
 }
 
 export const Pieces = {
-	pawn: "pawn",
+	pawn:   "pawn",
 	knight: "knight",
 	bishop: "bishop",
-	rook: "rook",
-	queen: "queen",
-	king: "king",
+	rook:   "rook",
+	queen:  "queen",
+	king:   "king",
+} as const;
+
+export const PieceValues = {
+	pawn:   1,
+	knight: 3,
+	bishop: 3,
+	rook:   5,
+	queen:  9,
+	king:   0,
+} as const;
+
+export const PieceCosts = {
+	pawn:   0,
+	knight: 1,
+	bishop: 1,
+	rook:   2,
+	queen:  3,
+	king:   3,
 } as const;
 
 export const validPromotions: Set<keyof typeof Pieces | undefined> = new Set([
@@ -235,8 +253,16 @@ export function getCoordType(quantumPos: ObjectPosition, coord: Coord): keyof ty
 	return findUnit(quantumPos.objects, coord)?.state.promotion ?? findObject(quantumPos, coord)?.pieceType.type_p;
 }
 
-export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side: keyof typeof Sides): ObjectSet | undefined {
-	return quantumPos.objects.find(objectSet => objectSet.pieceType.type_p === rawType && objectSet.pieceType.side === side);
+export function getUnitType(quantumPos: ObjectPosition, unit: PositionedPiece): keyof typeof Pieces {
+	return unit.state.promotion ?? quantumPos.objects.find(objectSet => objectSet.units.includes(unit))!.pieceType.type_p;
+}
+
+export function getSide(quantumPos: ObjectPosition, side: keyof typeof Sides = quantumPos.otherData.whoseTurn): ObjectSet[] {
+	return quantumPos.objects.filter(objectSet => objectSet.pieceType.side === side);
+}
+
+export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side?: keyof typeof Sides): ObjectSet | undefined {
+	return getSide(quantumPos, side).find(objectSet => objectSet.pieceType.type_p === rawType);
 }
 
 export function areOfDifferentObjects(quantumPos: ObjectPosition, coordOne: Coord, coordTwo: Coord): boolean {
@@ -356,13 +382,13 @@ export class ChessboardPosition {
 	fullPieces: ColoredPiece[];
 	squares: FullBoard;
 
-	constructor(objectPosition: ObjectSet[]) {
+	constructor(objects: ObjectSet[]) {
 		const currentPieces: ColoredPiece[] = [];
 		const currentSquares: FullBoard = Array(64).fill(undefined) as FullBoard;
-		for (const objectSet of objectPosition) {
+		for (const objectSet of objects) {
 			for (const unit of objectSet.units) {
-				const squareIndex = coordToIndex(discardProbability(unit.state));
-				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardProbability(otherPiece.state))));
+				const squareIndex = coordToIndex(unit.state);
+				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardPromotion(otherPiece.state))));
 				assert(currentSquares[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
 				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
 				currentSquares[squareIndex] = {
@@ -402,6 +428,10 @@ export interface Enpassant {
 
 export function enpassantDisplacement(side: keyof typeof Sides): number {
 	return side === Sides.white ? 1 : -1;
+}
+
+export function pawnRank(side: keyof typeof Sides): number {
+	return side === Sides.white ? 2 : 7;
 }
 
 export function promotionRank(side: keyof typeof Sides): number {

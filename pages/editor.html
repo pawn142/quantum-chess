@@ -7,81 +7,362 @@
 		<title>Quantum Chess Editor</title>
 		<style>
 			body {
-				background-image: url("assets/other assets/quantum.png");
+				background-image: url("assets/images/quantum.png");
 				background-size: cover;
 				background-repeat: no-repeat;
 				background-attachment: fixed;
+				overflow: hidden;
 				font-family: verdana;
+				-webkit-user-select: none;
+				user-select: none;
 			}
 
-			p, button {
+			div, button, img, svg, textarea, text, input, i {
+				position: absolute;
 				margin: 0;
 				padding: 0;
+				border-width: 0.5vh;
+			}
+
+			#settings-button, #discord-button, .qubit-img, .button, .option {
+				cursor: pointer;
 			}
 
 			#board {
-				position: absolute;
 				top: 50%;
 				left: 50%;
 				translate: -50% -50%;
-				height: 70%;
 				aspect-ratio: 1 / 1;
 			}
 
-			#turn-counter {
-				position: absolute;
-				top: 8%;
-				left: 50%;
-				translate: -50%;
-				font-size: 24px;
-			}
-
-			#coordinates {
-				position: absolute;
-				left: 0;
-			}
-
-			.board-img {
+			#board-img {
 				height: 100%;
 			}
 
-			.coordinate-light {
-				fill: #739552;
+			#turn-counter {
+				top: 4vh;
+				left: 50%;
+				translate: -50%;
+				font-size: 4vh;
+				cursor: pointer;
 			}
 
-			.coordinate-dark {
+			#coordinates {
+				top: 0;
+				left: 0;
+			}
+
+			#import-export {
+				top: 11vh;
+				left: 11.8vh;
+				width: 44vh;
+				height: 22vh;
+				border-width: 0.2vh;
+				font-size: 1.8vh;
+			}
+
+			#settings {
+				top: 0;
+				right: -50vh;
+				width: 50vh;
+				height: 100vh;
+				background-color: #2b2727;
+				transition: right 0.5s ease;
+				z-index: 3;
+			}
+
+			#settings-button, #discord-button {
+				top: 1.5vh;
+				font-size: 3vh;
+				color: darkgray;
+				z-index: 4;
+			}
+
+			#settings-button {
+				right: 1.5vh;
+			}
+
+			#discord-button {
+				right: 6vh;
+			}
+
+			#settings-title {
+				top: 2%;
+				left: 50%;
+				translate: -50%;
+				font-size: 4vh;
+			}
+
+			#settings-title, .section, .option-text {
+				color: #e1e2e3;
+			}
+
+			.white {
+				bottom: -10%;
+			}
+
+			.black {
+				bottom: 103%;
+			}
+
+			.qubit-img {
+				left: 0;
+				height: 7%;
+			}
+
+			.qubit-num {
+				left: 9.5%;
+				margin-bottom: 0.5vh;
+				font-size: 3vh;
+				font-family: monospace;
+			}
+
+			.import {
+				left: 3vh;
+			}
+
+			.export {
+				left: 19vh;
+			}
+
+			.clear-board {
+				left: 35vh;
+			}
+
+			.reset {
+				left: 51vh;
+			}
+
+			.play {
+				right: 51vh;
+			}
+
+			.undo {
+				right: 35vh;
+			}
+
+			.clear-play {
+				right: 19vh;
+			}
+
+			.button {
+				top: 3vh;
+				width: 14vh;
+				height: 5vh;
+				font-size: 1.8vh;
+			}
+
+			.light {
 				fill: #EBECD0;
 			}
 
-			.coordinate-light, .coordinate-dark {
+			.dark {
+				fill: #739552;
+			}
+
+			.coordinate {
 				font-family: sans-serif;
 				font-weight: 600;
 			}
+
+			.section, .option, .volume-icon {
+				left: 6%;
+			}
+
+			.section {
+				font-size: 3vh;
+			}
+
+			.option {
+				height: 2vh;
+				width: 2vh;
+				translate: 0 14%;
+			}
+
+			.option-text {
+				left: 12%;
+				font-size: 2vh;
+			}
+
+			.game {
+				top: 8%;
+			}
+
+			.no1 {
+				top: 13%;
+			}
+
+			.no2 {
+				top: 17%;
+			}
+
+			.no3 {
+				top: 21%;
+			}
+
+			.no4 {
+				top: 25%;
+			}
+
+			.no5 {
+				top: 29%;
+			}
+
+			.no6 {
+				top: 33%;
+			}
+
+			.no7 {
+				top: 37%;
+			}
+
+			.no8 {
+				top: 41%;
+			}
+
+			.no9 {
+				top: 45%;
+			}
+
+			.no10 {
+				top: 49%;
+			}
+
+			.no11 {
+				top: 53%;
+			}
+
+			.no12 {
+				top: 57%;
+			}
+
+			.no13 {
+				top: 61%;
+			}
+
+			.no14 {
+				top: 65%;
+			}
+
+			.no15 {
+				top: 69%;
+			}
+
+			.visual {
+				top: 74%;
+			}
+
+			.no16 {
+				top: 79%;
+			}
+
+			.no17 {
+				top: 83%;
+			}
+
+			.no18 {
+				top: 87%;
+			}
+
+			.volume {
+				top: 93.5%;
+			}
+
+			.volume-icon {
+				translate: 0 -23.3%;
+				font-size: 4vh;
+				color: orange;
+			}
+
+			.slider {
+				left: 19%;
+				width: 32vh;
+				height: 2vh;
+				accent-color: darkgray;
+			}
 		</style>
 		<script type="module" src="dist/scripts/window adder.js"></script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 	</head>
-	<body onload="setup()">
-		<p id="turn-counter"></p>
+	<body onload="setup()" ondragstart="return false">
+		<text id="turn-counter" onclick="changeSide()"></text>
+		<button class="import button"      onclick="importPosition()">Import Position</button>
+		<button class="export button"      onclick="exportPosition()">Export Position</button>
+		<button class="clear-board button" onclick="clearBoard()"    >Clear Board    </button>
+		<button class="reset button"       onclick="resetPosition()" >Reset Position </button>
+		<button class="play button"        onclick="makePlay()"      >Make Play      </button>
+		<button class="undo button"        onclick="undoPlay()"      >Undo Play      </button>
+		<button class="clear-play button"  onclick="clearPlay()"     >Clear Play     </button>
+		<textarea id="import-export"></textarea>
+		<i id="settings-button" class="fa fa-gear" onclick="window.settingsMenu.style.right = window.settingsMenu.style.right === '0px' ? '-50vh' : '0'"></i>
+		<i id="discord-button" class="fab fa-discord" onclick="window.open('https://discord.com/channels/1137778574909255741/1360046957975830588', '_blank')"></i>
 		<div id="board">
-			<img class="board-img" src="assets/other assets/board.png">
+			<img id="board-img" src="assets/images/board.png">
+			<img class="qubit-img white" src="assets/images/qubit.png" onclick="toggleInfiniteQubits('white')">
+			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits('black')">
+			<text id="qubits-white" class="qubit-num white"></text>
+			<text id="qubits-black" class="qubit-num black"></text>
 			<svg id="coordinates" width="100%" height="100%" viewBox="0 0 100 100">
-				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate-light">8</text>
-				<text x="0.75" y="15.75" font-size="2.8" class="coordinate-dark" >7</text>
-				<text x="0.75" y="28.25" font-size="2.8" class="coordinate-light">6</text>
-				<text x="0.75" y="40.75" font-size="2.8" class="coordinate-dark" >5</text>
-				<text x="0.75" y="53.25" font-size="2.8" class="coordinate-light">4</text>
-				<text x="0.75" y="65.75" font-size="2.8" class="coordinate-dark" >3</text>
-				<text x="0.75" y="78.25" font-size="2.8" class="coordinate-light">2</text>
-				<text x="0.75" y="90.75" font-size="2.8" class="coordinate-dark" >1</text>
-				<text x="10"   y="99"    font-size="2.8" class="coordinate-dark" >a</text>
-				<text x="22.5" y="99"    font-size="2.8" class="coordinate-light">b</text>
-				<text x="35"   y="99"    font-size="2.8" class="coordinate-dark" >c</text>
-				<text x="47.5" y="99"    font-size="2.8" class="coordinate-light">d</text>
-				<text x="60"   y="99"    font-size="2.8" class="coordinate-dark" >e</text>
-				<text x="72.5" y="99"    font-size="2.8" class="coordinate-light">f</text>
-				<text x="85"   y="99"    font-size="2.8" class="coordinate-dark" >g</text>
-				<text x="97.5" y="99"    font-size="2.8" class="coordinate-light">h</text>
+				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate dark" >8</text>
+				<text x="0.75" y="15.75" font-size="2.8" class="coordinate light">7</text>
+				<text x="0.75" y="28.25" font-size="2.8" class="coordinate dark" >6</text>
+				<text x="0.75" y="40.75" font-size="2.8" class="coordinate light">5</text>
+				<text x="0.75" y="53.25" font-size="2.8" class="coordinate dark" >4</text>
+				<text x="0.75" y="65.75" font-size="2.8" class="coordinate light">3</text>
+				<text x="0.75" y="78.25" font-size="2.8" class="coordinate dark" >2</text>
+				<text x="0.75" y="90.75" font-size="2.8" class="coordinate light">1</text>
+				<text x="10"   y="99"    font-size="2.8" class="coordinate light">a</text>
+				<text x="22.5" y="99"    font-size="2.8" class="coordinate dark" >b</text>
+				<text x="35"   y="99"    font-size="2.8" class="coordinate light">c</text>
+				<text x="47.5" y="99"    font-size="2.8" class="coordinate dark" >d</text>
+				<text x="60"   y="99"    font-size="2.8" class="coordinate light">e</text>
+				<text x="72.5" y="99"    font-size="2.8" class="coordinate dark" >f</text>
+				<text x="85"   y="99"    font-size="2.8" class="coordinate light">g</text>
+				<text x="97.5" y="99"    font-size="2.8" class="coordinate dark" >h</text>
 			</svg>
+		</div>
+		<div id="settings">
+			<text id="settings-title">Settings</text>
+			<text class="section game">Game</text>
+			<text class="option-text no1"> Win by checkmate                        </text>
+			<text class="option-text no2"> Allow null plays                        </text>
+			<text class="option-text no3"> Allow castling                          </text>
+			<text class="option-text no4"> Allow castle splitting                  </text>
+			<text class="option-text no5"> Allow pawn double move splitting        </text>
+			<text class="option-text no6"> Measure partial piece captures          </text>
+			<text class="option-text no7"> Measure partial king captures           </text>
+			<text class="option-text no8"> Reward partial captures                 </text>
+			<text class="option-text no9"> Use advanced qubit formulas             </text>
+			<text class="option-text no10">Use declaration 'captureOnly' externally</text>
+			<text class="option-text no11">Use declaration 'noCapture' externally  </text>
+			<text class="option-text no12">Use declaration 'checkOnly'             </text>
+			<text class="option-text no13">Use declaration 'noCheck'               </text>
+			<text class="option-text no14">Use declaration 'nonLeaping' externally </text>
+			<text class="option-text no15">Use true measurements                   </text>
+			<input type="checkbox" class="option no1"          onclick="window.gameSettings.winByCheckmate                      = !window.gameSettings.winByCheckmate                     ">
+			<input type="checkbox" class="option no2"          onclick="window.gameSettings.nullPlays                           = !window.gameSettings.nullPlays                          ">
+			<input type="checkbox" class="option no3"  checked onclick="window.gameSettings.allowCastling                       = !window.gameSettings.allowCastling                      ">
+			<input type="checkbox" class="option no4"          onclick="window.gameSettings.castleSplitting                     = !window.gameSettings.castleSplitting                    ">
+			<input type="checkbox" class="option no5"          onclick="window.gameSettings.pawnDoubleMoveSplitting             = !window.gameSettings.pawnDoubleMoveSplitting            ">
+			<input type="checkbox" class="option no6"          onclick="window.gameSettings.measurePieceCaptures                = !window.gameSettings.measurePieceCaptures               ">
+			<input type="checkbox" class="option no7"  checked onclick="window.gameSettings.measureKingCaptures                 = !window.gameSettings.measureKingCaptures                ">
+			<input type="checkbox" class="option no8"          onclick="window.gameSettings.partialQubitRewards                 = !window.gameSettings.partialQubitRewards                ">
+			<input type="checkbox" class="option no9"          onclick="window.gameSettings.advancedQubitMode                   = !window.gameSettings.advancedQubitMode                  ">
+			<input type="checkbox" class="option no10"         onclick="window.gameSettings.allowedMoveDeclarations.captureOnly = !window.gameSettings.allowedMoveDeclarations.captureOnly">
+			<input type="checkbox" class="option no11"         onclick="window.gameSettings.allowedMoveDeclarations.noCapture   = !window.gameSettings.allowedMoveDeclarations.noCapture  ">
+			<input type="checkbox" class="option no12"         onclick="window.gameSettings.allowedMoveDeclarations.checkOnly   = !window.gameSettings.allowedMoveDeclarations.checkOnly  ">
+			<input type="checkbox" class="option no13"         onclick="window.gameSettings.allowedMoveDeclarations.noCheck     = !window.gameSettings.allowedMoveDeclarations.noCheck    ">
+			<input type="checkbox" class="option no14"         onclick="window.gameSettings.allowedMoveDeclarations.nonLeaping  = !window.gameSettings.allowedMoveDeclarations.nonLeaping ">
+			<input type="checkbox" class="option no15" checked onclick="window.gameSettings.measurementType                     = !window.gameSettings.measurementType                    ">
+			<text class="section visual">Visual</text>
+			<text class="option-text no16">Show full rings  </text>
+			<text class="option-text no17">Fill ring centers</text>
+			<text class="option-text no18">Show coordinates </text>
+			<input type="checkbox" class="option no16" onclick="window.visualSettings.showFullRings   = !window.visualSettings.showFullRings  ; regeneratePosition()">
+			<input type="checkbox" class="option no17" onclick="window.visualSettings.fillRingCenters = !window.visualSettings.fillRingCenters; regeneratePosition()">
+			<input type="checkbox" class="option no18" onclick="window.visualSettings.showCoordinates = !window.visualSettings.showCoordinates; regeneratePosition()">
+			<i class="fa fa-volume-up volume volume-icon"></i>
+			<input type="range" class="volume slider" min="0" max="100" value="100">
 		</div>
 	</body>
 </html>
