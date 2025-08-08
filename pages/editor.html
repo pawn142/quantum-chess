@@ -53,7 +53,7 @@
 			}
 
 			#import-export {
-				top: 11vh;
+				top: 14vh;
 				left: 11.8vh;
 				width: 44vh;
 				height: 22vh;
@@ -93,7 +93,7 @@
 				font-size: 4vh;
 			}
 
-			#settings-title, .section, .option-text {
+			#settings-title, .section, .option-text, .volume-icon {
 				color: #e1e2e3;
 			}
 
@@ -137,16 +137,20 @@
 				right: 51vh;
 			}
 
-			.undo {
+			.clear-play {
 				right: 35vh;
 			}
 
-			.clear-play {
+			.undo {
 				right: 19vh;
 			}
 
+			.redo {
+				right: 3vh;
+			}
+
 			.button {
-				top: 3vh;
+				top: 6vh;
 				width: 14vh;
 				height: 5vh;
 				font-size: 1.8vh;
@@ -271,7 +275,6 @@
 			.volume-icon {
 				translate: 0 -23.3%;
 				font-size: 4vh;
-				color: orange;
 			}
 
 			.slider {
@@ -291,8 +294,9 @@
 		<button class="clear-board button" onclick="clearBoard()"    >Clear Board    </button>
 		<button class="reset button"       onclick="resetPosition()" >Reset Position </button>
 		<button class="play button"        onclick="makePlay()"      >Make Play      </button>
-		<button class="undo button"        onclick="undoPlay()"      >Undo Play      </button>
 		<button class="clear-play button"  onclick="clearPlay()"     >Clear Play     </button>
+		<button class="undo button"        onclick="undoPlay()"      >Undo Play      </button>
+		<button class="redo button"        onclick="redoPlay()"      >Redo Play      </button>
 		<textarea id="import-export"></textarea>
 		<i id="settings-button" class="fa fa-gear" onclick="window.settingsMenu.style.right = window.settingsMenu.style.right === '0px' ? '-50vh' : '0'"></i>
 		<i id="discord-button" class="fab fa-discord" onclick="window.open('https://discord.com/channels/1137778574909255741/1360046957975830588', '_blank')"></i>

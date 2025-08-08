@@ -9,11 +9,6 @@ import * as random from "../backend/random.js";
 
 import * as tools from "./toolbox.js";
 
-export function test(): void {
-	console.log(meta.isValidPositionString("turn: white, castling: wl true wr true bl true br true, enpassant: false, qubits: w 0 b 0|P1: (a2,1/1)|P2: (b2,1/1)|P3: (c2,1/1)|P4: (d2,1/1)|P5: (e2,1/1)|P6: (f2,1/1)|P7: (g2,1/1)|P8: (h2,1/1)|R1: (a1,1/1)|N1: (b1,1/1)|B1: (c1,1/1)|Q1: (d1,1/1)|K1: (e1,1/1)|B2: (f1,1/1)|N2: (g1,1/1)|R2: (h1,1/1)|p1: (a7,1/1)|p2: (b7,1/1)|p3: (c7,1/1)|p4: (d7,1/1)|p5: (e7,1/1)|p6: (f7,1/1)|p7: (g7,1/1)|p8: (h7,1/1)|r1: (a8,1/1)|n1: (b8,1/1)|b1: (c8,1/1)|q1: (d8,1/1)|k1: (e8,1/1)|b2: (f8,1/1)|n2: (g8,1/1)|r2: (h8,1/1)") &&
-	logic.isMoveLegal({ move: { start: { x: 5, y: 4 }, end: { x: 6, y: 5 } }, declarations: new Set(["nonLeaping", "captureOnly"]) }, logic.getResultOfMove({ pushedPawn: { x: 6, y: 7 } }, logic.getResultOfMove({ pushedPawn: { x: 5, y: 2 }}, piece.defaultPosition, true))));
-}
-
 export function clearBoardElements(): void {
 	for (let i = 0; i < 64; ++i) {
 		const unitDiv: HTMLDivElement | null = document.getElementById(i.toString());
@@ -35,11 +30,19 @@ export function clearPlay(): void {
 	removeSelection();
 }
 
+export function clearUndoTree(): void {
+	window.previous.positions.length = 0;
+	window.previous.plays.length = 0;
+	window.redo.positions.length = 0;
+	window.redo.plays.length = 0;
+}
+
 export function clearBoard(): void {
-	clearBoardElements();
 	window.position.objects = [];
 	window.objects = [];
+	clearBoardElements();
 	clearPlay();
+	clearUndoTree();
 }
 
 export function removeAnnotation(): void {
@@ -143,10 +146,9 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 }
 
 export function resetPosition(): void {
-	clearPlay();
 	showPosition(logic.initializeObjectPosition(window.gameSettings.unlimitedQubits));
-	window.previous.positions.length = 0;
-	window.previous.plays.length = 0;
+	clearPlay();
+	clearUndoTree();
 }
 
 export function regeneratePosition(): void {
@@ -168,6 +170,12 @@ export function setup(): void {
 	window.gameSettings = meta.defaultSettings;
 	window.visualSettings = tools.defaultVisuals;
 	window.settingsMenu = document.getElementById("settings");
+	window.sounds = {};
+	window.sounds.capture = new Audio("assets/sounds/capture.webm");
+	window.sounds.move = new Audio("assets/sounds/move.webm");
+	window.sounds.check = new Audio();
+	window.sounds.split = new Audio();
+	window.sounds.invalidated = new Audio();
 	for (const coord of piece.chessboard) {
 		const squareDiv: HTMLDivElement = document.createElement("div");
 		window.board.append(squareDiv);
@@ -208,7 +216,7 @@ export function setup(): void {
 				}
 			} else {
 				const matchingMove: piece.DeclaredMove | undefined = logic.candidateMoves(piece.findUnit(piece.getSide(window.position), window.selection.coord), window.position).find(candidateMove => piece.areCoordsEqual(logic.generateStartMiddleEnd(candidateMove.move)[2], coord));
-				if (matchingMove) {
+				if (matchingMove && logic.generatePossiblePositions(window.position, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))).some(possiblePosition => logic.isMoveLegal(matchingMove, possiblePosition, window.gameSettings.winByCheckmate))) {
 					const previousArrow: HTMLElement | null = document.getElementById(window.selection.coord.x.toString() + window.selection.coord.y + coord.x + coord.y);
 					if (previousArrow) {
 						if (previousArrow.classList.contains("primary")) {
@@ -278,6 +286,10 @@ export function setup(): void {
 		positions: [],
 		plays: [],
 	};
+	window.redo = {
+		positions: [],
+		plays: [],
+	};
 	resetPosition();
 }
 
@@ -312,6 +324,7 @@ export function toggleInfiniteQubits(side: keyof typeof piece.Sides): void {
 export function importPosition(): void {
 	if (logic.isValidStartingObjectsString(window.import_export.value)) {
 		showPosition(logic.getObjectsFromString(window.import_export.value));
+		clearPlay();
 	} else {
 		console.log("Import failed");
 	}
@@ -321,25 +334,56 @@ export function exportPosition(): void {
 	window.import_export.value = logic.getObjectsString(window.position);
 }
 
-export function makePlay(): void {
-	window.play.primaryMoves = window.play.primaryMoves.flat();
-	window.previous.positions.push(Fraction.fractionalClone(window.position));
-	window.previous.plays.push(window.play);
-	if (logic.isPlayLegal(window.play, window.position, window.gameSettings)) {
-		showPosition(logic.generatePlayResults(window.play, window.position, window.gameSettings));
-	} else {
-		console.log("Play failed: " + [...logic.checkPlayValidity(window.play, window.position, window.gameSettings)][0]);
-		window.previous.positions.pop();
-		window.previous.plays.pop();
+export function setVolume(): void {
+	for (const sound of Object.keys(tools.Sounds)) {
+		window.sounds[sound].volume = window.volumeSlider.value / 100;
 	}
+}
+
+export function makePlay(): void {
+	const filteredPlay: piece.Play = structuredClone(window.play);
+	filteredPlay.primaryMoves = filteredPlay.primaryMoves.filter(i => i);
+	if (!logic.isPlayLegal(filteredPlay, window.position, window.gameSettings)) {
+		console.log("Play failed: " + [...logic.checkPlayValidity(window.play, window.position, window.gameSettings)][0]);
+		return;
+	}
+	window.play.primaryMoves = filteredPlay.primaryMoves;
+	const previousPosition: any[] = [];
+	previousPosition.push(Fraction.fractionalClone(window.position));
+	const playResults: [ObjectPosition, boolean] = logic.generatePlayResults(window.play, window.position, window.gameSettings);
+	previousPosition.push(playResults[1]);
+	window.previous.positions.push(previousPosition);
+	window.previous.plays.push(window.play);
+	setVolume();
+	tools.playSound(window.sounds[playResults[1]]);
+	showPosition(playResults[0]);
 	clearPlay();
+	window.redo.positions.length = 0;
+	window.redo.plays.length = 0;
 }
 
 export function undoPlay(): void {
 	if (window.previous.positions.length) {
-		showPosition(window.previous.positions[window.previous.positions.length - 1]);
-		showPlay(window.previous.plays[window.previous.positions.length - 1]);
+		if (window.position.objects.length) {
+			window.redo.positions.push([Fraction.fractionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
+			window.redo.plays.push(window.play);
+		}
+		showPosition(window.previous.positions.at(-1)[0]);
+		showPlay(window.previous.plays.at(-1));
 		window.previous.positions.pop();
 		window.previous.plays.pop();
+	}
+}
+
+export function redoPlay(): void {
+	if (window.redo.positions.length) {
+		window.previous.positions.push([Fraction.fractionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
+		window.previous.plays.push(window.play);
+		showPosition(window.redo.positions.at(-1)[0]);
+		showPlay(window.redo.plays.at(-1));
+		setVolume();
+		tools.playSound(window.sounds[window.redo.positions.at(-1)[1]]);
+		window.redo.positions.pop();
+		window.redo.plays.pop();
 	}
 }
