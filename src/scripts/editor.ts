@@ -60,16 +60,21 @@ export function removeSelection(): void {
 }
 
 export function updateTurnCounter(): void {
-	window.turnCounter.innerHTML = (window.position.otherData.whoseTurn === piece.Sides.white ? "White" : "Black") + " to move";
-	window.turnCounter.style.color = window.position.otherData.whoseTurn;
+	if (window.gameOver) {
+		window.turnCounter.innerHTML = (window.position.otherData.whoseTurn === piece.Sides.white ? "Black" : "White") + " wins";
+		window.turnCounter.style.color = piece.otherSide(window.position.otherData.whoseTurn);
+	} else {
+		window.turnCounter.innerHTML = (window.position.otherData.whoseTurn === piece.Sides.white ? "White" : "Black") + " to move";
+		window.turnCounter.style.color = window.position.otherData.whoseTurn;
+	}
 }
 
 export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary" | "default", color = type === "primary" ? "white" : window.ringColor): void {
 	const arrow = document.createElement("div");
 	arrow.className = "arrow " + type;
-	arrow.id = start.x.toString() + start.y + end.x + end.y;
+	arrow.id = type[0] + start.x + start.y + end.x + end.y;
 	arrow.index = type === "primary" ? window.play.primaryMoves.length : window.play.defaultMoves.length;
-	window.board.append(arrow);
+	window.arrowpool.append(arrow);
 	const diff_x: number = end.x - start.x;
 	const diff_y: number = end.y - start.y;
 	const hypotenuse: number = Math.sqrt(diff_x ** 2 + diff_y ** 2);
@@ -81,12 +86,11 @@ export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary
 		opacity: 0.8,
 	});
 	arrow.style.left = (start.x + end.x - hypotenuse - 1) * 6.25 + "%";
-	Object.assign(tools.createCover(arrow, "div").style, {
+	Object.assign(tools.createCover(arrow).style, {
 		width: arrow.offsetWidth * 100 / window.innerHeight - 3.5 + "vh",
 		"background-color": color,
-		"z-index": "1",
 	});
-	Object.assign(tools.createCover(arrow, "div").style, {
+	Object.assign(tools.createCover(arrow).style, {
 		top: "-2vh",
 		right: 0,
 		width: 0,
@@ -96,7 +100,6 @@ export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary
 		"border-top-width": "3vh",
 		"border-bottom-width": "3vh",
 		"border-color": "transparent transparent transparent " + color,
-		"z-index": "1",
 	});
 }
 
@@ -115,13 +118,25 @@ export function showPlay(play: piece.Play): void {
 
 export function showPosition(objectPosition: piece.ObjectPosition): void {
 	clearBoardElements();
-	window.coordinates.style.visibility = window.visualSettings.showCoordinates ? "visible" : "hidden";
+	const mainPerspective: boolean = window.visualSettings.perspective === piece.Sides.white;
+	window.arrowpool.style.rotate = mainPerspective ? "0" : "180deg";
+	window.whiteCoordinates.style.visibility = window.visualSettings.showCoordinates && mainPerspective ? "visible" : "hidden";
+	window.blackCoordinates.style.visibility = window.visualSettings.showCoordinates && !mainPerspective ? "visible" : "hidden";
+	for (let i = 0; i < 64; ++i) {
+		const squareDiv: HTMLDivElement = window["square" + i];
+		Object.assign(squareDiv.style, {
+			top: 12.5 * (mainPerspective ? 8 - squareDiv.coord.y : squareDiv.coord.y - 1) + "%",
+			left: 12.5 * (mainPerspective ? squareDiv.coord.x - 1 : 8 - squareDiv.coord.x) + "%",
+			width: "12.5%",
+			height: "12.5%",
+		});
+	}
 	for (const object of objectPosition.objects) {
 		for (const unit of object.units) {
-			const unitDiv: HTMLDivElement = tools.createCover(window["square" + piece.coordToIndex(unit.state)], "div");
+			const unitDiv: HTMLDivElement = tools.createCover(window["square" + piece.coordToIndex(unit.state)]);
 			unitDiv.id = piece.coordToIndex(unit.state).toString();
 			if (window.visualSettings.showFullRings || unit.state.probability.lessThan(new Fraction)) {
-				const probabilityDiv: HTMLDivElement = tools.createCover(unitDiv, "div");
+				const probabilityDiv: HTMLDivElement = tools.createCover(unitDiv);
 				Object.assign(probabilityDiv.style, {
 					top: "5%",
 					left: "5%",
@@ -136,8 +151,13 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 			}
 			const unitImg: HTMLImageElement = tools.createCover(unitDiv, "img");
 			unitImg.src = tools.getPieceImage(unit.state.promotion ?? object.pieceType.type_p, object.pieceType.side);
+			if (window.gameOver && object.pieceType.type_p === piece.Pieces.king && object.pieceType.side === objectPosition.otherData.whoseTurn) {
+				unitImg.style.rotate = "-90deg";
+			}
 		}
 	}
+	window["qubits" + (mainPerspective ? "White" : "Black")] = document.getElementById("qubits-white");
+	window["qubits" + (mainPerspective ? "Black" : "White")] = document.getElementById("qubits-black");
 	window.position = objectPosition;
 	updateTurnCounter();
 	window.objects = objectPosition.objects;
@@ -146,6 +166,7 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 }
 
 export function resetPosition(): void {
+	window.gameOver = false;
 	showPosition(logic.initializeObjectPosition(window.gameSettings.unlimitedQubits));
 	clearPlay();
 	clearUndoTree();
@@ -161,10 +182,11 @@ export function setup(): void {
 	window.ringColor = "rgba(255, 42, 81, 0.8)";
 	window.board = document.getElementById("board");
 	window.board.style.height = 200 / 3 + "%";
-	window.coordinates = document.getElementById("coordinates");
+	window.arrowpool = tools.createCover(window.board);
+	window.arrowpool.style["z-index"] = "1";
+	window.whiteCoordinates = document.getElementById("coordinates-white");
+	window.blackCoordinates = document.getElementById("coordinates-black");
 	window.turnCounter = document.getElementById("turn-counter");
-	window.qubitsWhite = document.getElementById("qubits-white");
-	window.qubitsBlack = document.getElementById("qubits-black");
 	window.import_export = document.getElementById("import-export");
 	window.volumeSlider = document.querySelector(".slider");
 	window.gameSettings = meta.defaultSettings;
@@ -173,18 +195,14 @@ export function setup(): void {
 	window.sounds = {};
 	window.sounds.capture = new Audio("assets/sounds/capture.webm");
 	window.sounds.move = new Audio("assets/sounds/move.webm");
-	window.sounds.check = new Audio();
-	window.sounds.split = new Audio();
-	window.sounds.invalidated = new Audio();
+	window.sounds.check = new Audio("assets/sounds/check.mp3");
+	window.sounds.split = new Audio("assets/sounds/move.webm");
+	window.sounds.invalidated = new Audio("assets/sounds/illegal.webm");
+	window.sounds.castle = new Audio("assets/sounds/castle.mp3");
+	window.sounds.promote = new Audio("assets/sounds/promote.mp3");
 	for (const coord of piece.chessboard) {
 		const squareDiv: HTMLDivElement = document.createElement("div");
 		window.board.append(squareDiv);
-		Object.assign(squareDiv.style, {
-			top: 12.5 * (8 - coord.y) + "%",
-			left: 12.5 * (coord.x - 1) + "%",
-			width: "12.5%",
-			height: "12.5%",
-		});
 		squareDiv.coord = coord;
 		squareDiv.index = piece.coordToIndex(coord);
 		window["square" + squareDiv.index] = squareDiv;
@@ -216,8 +234,8 @@ export function setup(): void {
 				}
 			} else {
 				const matchingMove: piece.DeclaredMove | undefined = logic.candidateMoves(piece.findUnit(piece.getSide(window.position), window.selection.coord), window.position).find(candidateMove => piece.areCoordsEqual(logic.generateStartMiddleEnd(candidateMove.move)[2], coord));
-				if (matchingMove && logic.generatePossiblePositions(window.position, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))).some(possiblePosition => logic.isMoveLegal(matchingMove, possiblePosition, window.gameSettings.winByCheckmate))) {
-					const previousArrow: HTMLElement | null = document.getElementById(window.selection.coord.x.toString() + window.selection.coord.y + coord.x + coord.y);
+				const previousArrow: HTMLDivElement | null = document.querySelector(`[id$="${window.selection.coord.x.toString() + window.selection.coord.y + coord.x + coord.y}"]`);
+				if (!window.gameOver && (previousArrow || matchingMove && logic.generatePossiblePositions(window.position, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))).some(possiblePosition => logic.isMoveLegal(matchingMove, possiblePosition, window.gameSettings.winByCheckmate)))) {
 					if (previousArrow) {
 						if (previousArrow.classList.contains("primary")) {
 							if (clickType === "left") {
@@ -230,7 +248,7 @@ export function setup(): void {
 						} else {
 							if (clickType === "right") {
 								previousArrow.remove();
-								window.play.defaultMoves.length = 0;
+								delete window.play.defaultMoves[previousArrow.index];
 							}
 						}
 					} else {
@@ -238,9 +256,10 @@ export function setup(): void {
 							createArrow(window.selection.coord, coord, "primary");
 							window.play.primaryMoves.push(matchingMove);
 						} else {
-							if (window.play.defaultMoves.length) {
-								document.querySelector(".default").remove();
-								window.play.defaultMoves.length = 0;
+							const replacedDefault: HTMLDivElement | null = document.querySelector(`[id^="${'d' + window.selection.coord.x + window.selection.coord.y}"]`);
+							if (replacedDefault) {
+								replacedDefault.remove();
+								delete window.play.defaultMoves[window.play.defaultMoves.findIndex(defaultMove => defaultMove && piece.areCoordsEqual(logic.generateStartMiddleEnd(defaultMove.move)[0], window.selection.coord))];
 							}
 							createArrow(window.selection.coord, coord, "default");
 							window.play.defaultMoves.push(matchingMove);
@@ -294,9 +313,11 @@ export function setup(): void {
 }
 
 export function changeSide(): void {
-	clearPlay();
-	window.position.otherData.whoseTurn = piece.otherSide(window.position.otherData.whoseTurn);
-	updateTurnCounter();
+	if (!window.gameOver) {
+		clearPlay();
+		window.position.otherData.whoseTurn = piece.otherSide(window.position.otherData.whoseTurn);
+		updateTurnCounter();
+	}
 }
 
 export function toggleInfiniteQubits(side: keyof typeof piece.Sides): void {
@@ -343,19 +364,22 @@ export function setVolume(): void {
 export function makePlay(): void {
 	const filteredPlay: piece.Play = structuredClone(window.play);
 	filteredPlay.primaryMoves = filteredPlay.primaryMoves.filter(i => i);
+	filteredPlay.defaultMoves = filteredPlay.defaultMoves.filter(i => i);
 	if (!logic.isPlayLegal(filteredPlay, window.position, window.gameSettings)) {
-		console.log("Play failed: " + [...logic.checkPlayValidity(window.play, window.position, window.gameSettings)][0]);
+		console.log("Play failed: " + [...logic.checkPlayValidity(filteredPlay, window.position, window.gameSettings)][0]);
 		return;
 	}
 	window.play.primaryMoves = filteredPlay.primaryMoves;
+	window.play.defaultMoves = filteredPlay.defaultMoves;
 	const previousPosition: any[] = [];
 	previousPosition.push(Fraction.fractionalClone(window.position));
 	const playResults: [ObjectPosition, boolean] = logic.generatePlayResults(window.play, window.position, window.gameSettings);
-	previousPosition.push(playResults[1]);
+	previousPosition.push(playResults[1], playResults[2]);
 	window.previous.positions.push(previousPosition);
 	window.previous.plays.push(window.play);
 	setVolume();
 	tools.playSound(window.sounds[playResults[1]]);
+	window.gameOver = playResults[2];
 	showPosition(playResults[0]);
 	clearPlay();
 	window.redo.positions.length = 0;
@@ -368,6 +392,7 @@ export function undoPlay(): void {
 			window.redo.positions.push([Fraction.fractionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
 			window.redo.plays.push(window.play);
 		}
+		window.gameOver = false;
 		showPosition(window.previous.positions.at(-1)[0]);
 		showPlay(window.previous.plays.at(-1));
 		window.previous.positions.pop();
@@ -379,11 +404,17 @@ export function redoPlay(): void {
 	if (window.redo.positions.length) {
 		window.previous.positions.push([Fraction.fractionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
 		window.previous.plays.push(window.play);
-		showPosition(window.redo.positions.at(-1)[0]);
-		showPlay(window.redo.plays.at(-1));
 		setVolume();
 		tools.playSound(window.sounds[window.redo.positions.at(-1)[1]]);
+		window.gameOver = window.redo.positions.at(-1)[2];
+		showPosition(window.redo.positions.at(-1)[0]);
+		showPlay(window.redo.plays.at(-1));
 		window.redo.positions.pop();
 		window.redo.plays.pop();
 	}
+}
+
+export function flipBoard(): void {
+	window.visualSettings.perspective = piece.otherSide(window.visualSettings.perspective);
+	regeneratePosition();
 }

@@ -47,7 +47,7 @@
 				cursor: pointer;
 			}
 
-			#coordinates {
+			#coordinates-white, #coordinates-black {
 				top: 0;
 				left: 0;
 			}
@@ -302,11 +302,11 @@
 		<i id="discord-button" class="fab fa-discord" onclick="window.open('https://discord.com/channels/1137778574909255741/1360046957975830588', '_blank')"></i>
 		<div id="board">
 			<img id="board-img" src="assets/images/board.png">
-			<img class="qubit-img white" src="assets/images/qubit.png" onclick="toggleInfiniteQubits('white')">
-			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits('black')">
+			<img class="qubit-img white" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.perspective)">
+			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.perspective === 'white' ? 'black' : 'white')">
 			<text id="qubits-white" class="qubit-num white"></text>
 			<text id="qubits-black" class="qubit-num black"></text>
-			<svg id="coordinates" width="100%" height="100%" viewBox="0 0 100 100">
+			<svg id="coordinates-white" width="100%" height="100%" viewBox="0 0 100 100">
 				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate dark" >8</text>
 				<text x="0.75" y="15.75" font-size="2.8" class="coordinate light">7</text>
 				<text x="0.75" y="28.25" font-size="2.8" class="coordinate dark" >6</text>
@@ -323,6 +323,24 @@
 				<text x="72.5" y="99"    font-size="2.8" class="coordinate dark" >f</text>
 				<text x="85"   y="99"    font-size="2.8" class="coordinate light">g</text>
 				<text x="97.5" y="99"    font-size="2.8" class="coordinate dark" >h</text>
+			</svg>
+			<svg id="coordinates-black" width="100%" height="100%" viewBox="0 0 100 100">
+				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate dark" >1</text>
+				<text x="0.75" y="15.75" font-size="2.8" class="coordinate light">2</text>
+				<text x="0.75" y="28.25" font-size="2.8" class="coordinate dark" >3</text>
+				<text x="0.75" y="40.75" font-size="2.8" class="coordinate light">4</text>
+				<text x="0.75" y="53.25" font-size="2.8" class="coordinate dark" >5</text>
+				<text x="0.75" y="65.75" font-size="2.8" class="coordinate light">6</text>
+				<text x="0.75" y="78.25" font-size="2.8" class="coordinate dark" >7</text>
+				<text x="0.75" y="90.75" font-size="2.8" class="coordinate light">8</text>
+				<text x="10"   y="99"    font-size="2.8" class="coordinate light">h</text>
+				<text x="22.5" y="99"    font-size="2.8" class="coordinate dark" >g</text>
+				<text x="35"   y="99"    font-size="2.8" class="coordinate light">f</text>
+				<text x="47.5" y="99"    font-size="2.8" class="coordinate dark" >e</text>
+				<text x="60"   y="99"    font-size="2.8" class="coordinate light">d</text>
+				<text x="72.5" y="99"    font-size="2.8" class="coordinate dark" >c</text>
+				<text x="85"   y="99"    font-size="2.8" class="coordinate light">b</text>
+				<text x="97.5" y="99"    font-size="2.8" class="coordinate dark" >a</text>
 			</svg>
 		</div>
 		<div id="settings">

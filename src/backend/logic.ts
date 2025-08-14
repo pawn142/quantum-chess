@@ -337,15 +337,14 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	const playedObject: ObjectSet | undefined = quantumPos.objects[play.objectIndex];
 	const problems: Set<string> = new Set;
 	if (!play.primaryMoves.length) {
-		if (settings.nullPlays) {
-			return new Set();
-		} else {
-			return new Set(["Null plays are not allowed in settings"]);
-		}
+		return play.defaultMoves.length ? new Set(["Cannot have only default moves"]) : settings.nullPlays ? new Set() : new Set(["Null plays are not allowed in settings"]);
 	}
 	assert(!!playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
 	if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0])!)).isSubsetOf(allowedDeclarations(settings)))) {
 		problems.add("One or more external declarations are not allowed in settings");
+	}
+	if (play.defaultMoves.some(defaultMove => play.primaryMoves.some(primaryMove => areCoordsEqual(generateStartMiddleEnd(primaryMove.move)[0], generateStartMiddleEnd(defaultMove.move)[0]) && areCoordsEqual(generateStartMiddleEnd(primaryMove.move)[2], generateStartMiddleEnd(defaultMove.move)[2])))) {
+		problems.add("A default move cannot be equal to a primary move");
 	}
 	if (play.primaryMoves.filter(declaredMove => moveType(declaredMove.move) === SpecialMoves.pawnDoubleMove).length > 1) {
 		problems.add("Only one pawn double move per play");
@@ -369,6 +368,9 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 		if (localDefaults.length > 1) {
 			problems.add("Only one default move per unit");
 		}
+		if (localDefaults.length && !localPrimaries.length) {
+			problems.add("Cannot have a default move without a corresponding primary move");
+		}
 		if (!settings.allowCastling && [...localPrimaries, ...localDefaults].some(declaredMove => moveType(declaredMove.move) === SpecialMoves.castle)) {
 			problems.add("Castling is not allowed in settings");
 		}
@@ -378,8 +380,8 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 		if (!settings.pawnDoubleMoveSplitting && localPrimaries.length > 1 && [...localPrimaries, ...localDefaults].some(declaredMove => moveType(declaredMove.move) === SpecialMoves.pawnDoubleMove)) {
 			problems.add("Making a split move while making a pawn double move is not allowed in settings");
 		}
-		if (settings.winByCheckmate && generatePossiblePositions(quantumPos, play.objectIndex, unitIndex).some(completedPos => isInCheck(completedPos) && !(localDefaults[0] && isMoveLegal(localDefaults[0], completedPos, true)) && localPrimaries.some(declaredMove => !isMoveLegal(declaredMove, completedPos, true)))) {
-			problems.add("Play is illegal (see the win by checkmate exception)");
+		if (settings.winByCheckmate && generatePossiblePositions(quantumPos, play.objectIndex, unitIndex).some(completedPos => isInCheck(completedPos) && !(localDefaults[0] && isMoveLegal(localDefaults[0], completedPos, true)) && (!localPrimaries.length || localPrimaries.some(declaredMove => !isMoveLegal(declaredMove, completedPos, true))))) {
+			problems.add("Not all possible outcomes resolve check");
 		}
 	});
 	return problems;
@@ -502,21 +504,35 @@ export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: Obje
 export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: GameSettings = defaultSettings, makeCopy: boolean = false): [ObjectPosition, keyof typeof Sounds, boolean] {
 	const originalPos: ObjectPosition = Fraction.fractionalClone(quantumPos);
 	const newQuantumPos: ObjectPosition = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+	let playSound: keyof typeof Sounds = Sounds.invalidated;
 	if (!play.primaryMoves.length) {
 		newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
-		return [newQuantumPos, Sounds.invalidated, false];
+		return [newQuantumPos, playSound, false];
 	}
 	const playedObject: ObjectSet = newQuantumPos.objects[play.objectIndex]!;
-	let playSound: keyof typeof Sounds = Sounds.move;
 	newQuantumPos.otherData.qubits[quantumPos.otherData.whoseTurn === Sides.white ? "whiteBalance" : "blackBalance"] -= calculateQubitCost(play, playedObject, settings.advancedQubitMode);
 	const captureDependencies: [Coord, Coord][] = [];
 	let newEnpassant: boolean = false;
+	let successfullyMoved: boolean = false;
+	let castled: boolean = false;
+	let promoted: boolean = false;
+	let splitMoved: boolean = false;
 	playedObject.units.slice().forEach(unit => {
 		const localPrimaries: DeclaredMove[] = getLocalMoves(play.primaryMoves, unit.state);
 		const localDefault: DeclaredMove | undefined = getLocalMoves(play.defaultMoves, unit.state)[0];
 		const defaultBuildup: Fraction = new Fraction(0);
 		for (const primaryMove of localPrimaries) {
 			if (generateMoveResults(primaryMove, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
+				successfullyMoved = true;
+				if (moveType(primaryMove.move) === SpecialMoves.castle) {
+					castled = true;
+				}
+				if ((primaryMove.move as StandardMove).end?.promotion) {
+					promoted = true;
+				}
+				if (localPrimaries.length > 1) {
+					splitMoved = true;
+				}
 				playedObject.units.unshift({
 					state: Object.assign(structuredClone(unit.state), {
 						probability: Fraction.quotient(unit.state.probability, new Fraction(localPrimaries.length)),
@@ -536,6 +552,13 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 			}
 		}
 		if (localDefault && defaultBuildup.numerator > 0 && generateMoveResults(localDefault, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
+			successfullyMoved = true;
+			if (moveType(localDefault.move) === SpecialMoves.castle) {
+				castled = true;
+			}
+			if ((localDefault.move as StandardMove).end?.promotion) {
+				promoted = true;
+			}
 			if (isCapture(localDefault.move, objectsToFilledPosition(newQuantumPos)) && captureDependencies.every(dependency => !areCoordsEqual(dependency[0], generateStartMiddleEnd(localDefault.move)[2]))) {
 				captureDependencies.push([generateStartMiddleEnd(localDefault.move)[2], getCapturedSquare(localDefault.move)]);
 			}
@@ -578,9 +601,6 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 			newQuantumPos.otherData.qubits[quantumPos.otherData.whoseTurn === Sides.white ? "whiteBalance" : "blackBalance"] = Math.round(qubitAmount);
 		}
 	})(getRespectiveQubitAmount(newQuantumPos.otherData));
-	if (calculateBoardValue(originalPos, true) - calculateBoardValue(newQuantumPos, true) > epsilon) {
-		playSound = Sounds.capture;
-	};
 	if (!newEnpassant) {
 		newQuantumPos.otherData.enpassant = false;
 	}
@@ -597,6 +617,24 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 				makeMeasurement(newQuantumPos, chooseElement(getCheckingDependencies([unit.state], newQuantumPos, newQuantumPos.otherData.whoseTurn)));
 			}
 		});
+	}
+	if (successfullyMoved) {
+		playSound = Sounds.move;
+	}
+	if (castled) {
+		playSound = Sounds.castle;
+	}
+	if (promoted) {
+		playSound = Sounds.promote;
+	}
+	if (splitMoved) {
+		playSound = Sounds.split;
+	}
+	if (calculateBoardValue(originalPos, true) - calculateBoardValue(newQuantumPos, true, newQuantumPos.otherData.whoseTurn) > epsilon || getSide(originalPos, newQuantumPos.otherData.whoseTurn).length > getSide(newQuantumPos).length) {
+		playSound = Sounds.capture;
+	};
+	if (settings.winByCheckmate && isInCheck(objectsToFilledPosition(quantumPos))) {
+		playSound = Sounds.check;
 	}
 	return [newQuantumPos, playSound, settings.winByCheckmate ? detectCheckmate(newQuantumPos) : !findObjectFromType(newQuantumPos, Pieces.king)];
 }

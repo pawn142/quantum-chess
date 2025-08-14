@@ -1,12 +1,14 @@
-import { Pieces, Sides } from "../backend/piecetypes.js";
+import { defaultData, Pieces, Sides } from "../backend/piecetypes.js";
 
 export interface VisualSettings {
+	perspective: keyof typeof Sides;
 	showFullRings: boolean;
 	fillRingCenters: boolean;
 	showCoordinates: boolean;
 }
 
 export const defaultVisuals: VisualSettings = {
+	perspective: defaultData.whoseTurn,
 	showFullRings: false,
 	fillRingCenters: false,
 	showCoordinates: false,
@@ -18,13 +20,15 @@ export const Sounds = {
 	check: "check",
 	split: "split",
 	invalidated: "invalidated",
+	castle: "castle",
+	promote: "promote",
 } as const;
 
 export function getPieceImage(pieceType: keyof typeof Pieces, side: keyof typeof Sides): string {
 	return `assets/pieces/${pieceType + side[0]!.toUpperCase()}.png`;
 }
 
-export function createCover(parent: HTMLElement, elementType: string): HTMLElement {
+export function createCover(parent: HTMLElement, elementType: string = "div"): HTMLElement {
 	const cover: HTMLElement = document.createElement(elementType);
 	parent.append(cover);
 	cover.style.width = "100%";
