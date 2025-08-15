@@ -728,7 +728,7 @@ export function getObjectsFromString(positionString) {
                 });
             }
             else {
-                currentUnits[parseInt(segment.split("-")[0].slice(1))].entangledTo.push(discardPromotion(currentUnits[parseInt(segment.split("-")[1])].state));
+                currentUnits[parseInt(segment.split("-")[0].slice(1))].entangledTo.push(currentUnits[parseInt(segment.split("-")[1])].state);
             }
         }
         currentObjects.push({
