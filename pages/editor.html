@@ -302,8 +302,8 @@
 		<i id="discord-button" class="fab fa-discord" onclick="window.open('https://discord.com/channels/1137778574909255741/1360046957975830588', '_blank')"></i>
 		<div id="board">
 			<img id="board-img" src="assets/images/board.png">
-			<img class="qubit-img white" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.perspective)">
-			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.perspective === 'white' ? 'black' : 'white')">
+			<img class="qubit-img white" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.visualSettings.perspective)">
+			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.visualSettings.perspective === 'white' ? 'black' : 'white')">
 			<text id="qubits-white" class="qubit-num white"></text>
 			<text id="qubits-black" class="qubit-num black"></text>
 			<svg id="coordinates-white" width="100%" height="100%" viewBox="0 0 100 100">
