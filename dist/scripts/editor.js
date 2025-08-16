@@ -340,6 +340,7 @@ export function importPosition() {
     if (logic.isValidStartingObjectsString(window.import_export.value)) {
         showPosition(logic.getObjectsFromString(window.import_export.value));
         clearPlay();
+        clearUndoTree();
     }
     else {
         console.log("Import failed");
