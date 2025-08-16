@@ -1,6 +1,6 @@
 import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
-import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, discardProbability, enpassantDisplacement, getSide, isCoord, translateCoord, validPromotions, ChessboardPosition, Pieces, Sides } from "./piecetypes.js";
+import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, enpassantDisplacement, getSide, isCoord, translateCoord, validPromotions, ChessboardPosition, Pieces, Sides } from "./piecetypes.js";
 export function filteredEntries(obj) {
     return Object.entries(obj).filter((entry) => entry[1] !== undefined);
 }
@@ -180,10 +180,12 @@ export function keyToPiece(key) {
 }
 export function gamePositionToObjects(gamePosition) {
     function pieceSetToPieces(pieceSet) {
-        return pieceSet.states.map(pieceCoord => ({
+        const currentPieces = pieceSet.states.map(pieceCoord => ({
             state: Fraction.fractionalClone(pieceCoord),
-            entangledTo: pieceSet.entanglements.filter(entanglement => pieceSet.states[entanglement.fromIndex] === pieceCoord).map(entanglement => discardProbability(pieceSet.states[entanglement.toIndex])),
+            entangledTo: [],
         }));
+        pieceSet.entanglements.forEach(entanglement => currentPieces[entanglement.fromIndex].entangledTo.push(currentPieces[entanglement.toIndex]));
+        return currentPieces;
     }
     return {
         objects: [
@@ -212,7 +214,7 @@ export function objectsToGamePosition(objectPosition) {
         }
         return {
             states: pieces.map(piece => Fraction.fractionalClone(piece.state)),
-            entanglements: pieces.flatMap(piece => piece.entangledTo.map(pieceCoord => new Entanglement(pieces.indexOf(piece), pieces.findIndex(candidate => areCoordsEqual(candidate.state, pieceCoord)), pieces))),
+            entanglements: pieces.flatMap(piece => piece.entangledTo.map(entanglesUnit => new Entanglement(pieces.indexOf(piece), pieces.indexOf(entanglesUnit), pieces))),
         };
     }
     return {

@@ -427,15 +427,14 @@ export function generateRandomDependency(declaredMove, quantumPos, winByCheckmat
 }
 export function cleanEntanglements(units, makeCopy = false) {
     const newUnits = makeCopy ? Fraction.fractionalClone(units) : units;
-    const unitPositions = new Set(units.map(unit => JSON.stringify(discardPromotion(unit.state))));
-    newUnits.forEach(unit => unit.entangledTo = unit.entangledTo.filter(entangledCoord => unitPositions.has(JSON.stringify(entangledCoord))));
+    newUnits.forEach(unit => unit.entangledTo = unit.entangledTo.filter(entanglesUnit => newUnits.includes(entanglesUnit)));
     return newUnits;
 }
 export function makeMeasurement(quantumPos, dependency, measurementType = defaultSettings.measurementType, excludedSide, makeCopy = false) {
     const newQuantumPos = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
     const dependentUnit = findUnit(newQuantumPos.objects.filter(objectSet => objectSet.pieceType.side !== excludedSide), dependency);
     const dependentObject = newQuantumPos.objects.find(objectSet => objectSet.units.includes(dependentUnit));
-    const measurementSet = [dependentUnit, ...dependentUnit.entangledTo.map(entangledCoord => findUnit([dependentObject], entangledCoord))];
+    const measurementSet = [dependentUnit, ...dependentObject.units.filter(unit => unit.entangledTo.includes(dependentUnit))];
     const innerProbability = Fraction.sum(...measurementSet.map(unit => unit.state.probability));
     if (measurementType) {
         if (random(innerProbability.denominator) < innerProbability.numerator) {
@@ -708,7 +707,7 @@ export function getObjectsString(objectPosition) {
         let entanglementString = "";
         objectSet.units.forEach(unit => {
             objectString += ` (${coordserialize(unit.state)},${unit.state.probability.serialize() + (unit.state.promotion ? "," + unit.state.promotion : "")}),`;
-            unit.entangledTo.forEach(coord => entanglementString += ` <${objectSet.units.indexOf(unit)}-${objectSet.units.indexOf(findUnit([objectSet], coord))}>,`);
+            unit.entangledTo.forEach(entanglesUnit => entanglementString += ` <${objectSet.units.indexOf(unit)}-${objectSet.units.indexOf(entanglesUnit)}>,`);
         });
         positionString += `|${objectSet.pieceType.type_p + objectSet.pieceType.side[0].toUpperCase()}:${(objectString + entanglementString).slice(0, -1)}`;
     });
@@ -728,7 +727,7 @@ export function getObjectsFromString(positionString) {
                 });
             }
             else {
-                currentUnits[parseInt(segment.split("-")[0].slice(1))].entangledTo.push(currentUnits[parseInt(segment.split("-")[1])].state);
+                currentUnits[parseInt(segment.split("-")[0].slice(1))].entangledTo.push(currentUnits[parseInt(segment.split("-")[1])]);
             }
         }
         currentObjects.push({
