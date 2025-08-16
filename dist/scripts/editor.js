@@ -364,7 +364,7 @@ export function makePlay() {
     window.play.primaryMoves = filteredPlay.primaryMoves;
     window.play.defaultMoves = filteredPlay.defaultMoves;
     const previousPosition = [];
-    previousPosition.push(Fraction.fractionalClone(window.position));
+    previousPosition.push(piece.positionalClone(window.position));
     const playResults = logic.generatePlayResults(window.play, window.position, window.gameSettings);
     previousPosition.push(playResults[1], playResults[2]);
     window.previous.positions.push(previousPosition);
@@ -380,7 +380,7 @@ export function makePlay() {
 export function undoPlay() {
     if (window.previous.positions.length) {
         if (window.position.objects.length) {
-            window.redo.positions.push([Fraction.fractionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
+            window.redo.positions.push([piece.positionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
             window.redo.plays.push(window.play);
         }
         window.gameOver = false;
@@ -392,7 +392,7 @@ export function undoPlay() {
 }
 export function redoPlay() {
     if (window.redo.positions.length) {
-        window.previous.positions.push([Fraction.fractionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
+        window.previous.positions.push([piece.positionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
         window.previous.plays.push(window.play);
         setVolume();
         tools.playSound(window.sounds[window.redo.positions.at(-1)[1]]);

@@ -1,7 +1,7 @@
 import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
 import { Sounds } from "../scripts/toolbox.js";
-import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, getSide, getUnitType, isCoord, isStandardMove, moveType, objectsToFilledPosition, otherSide, pawnRank, promotionRank, translateCoord, validPromotions, ChessboardPosition, MoveDeclarations, Pieces, PieceCosts, PieceValues, Sides, SpecialMoves } from "./piecetypes.js";
+import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, getSide, getUnitType, isCoord, isStandardMove, moveType, objectsToFilledPosition, otherSide, pawnRank, positionalClone, promotionRank, translateCoord, validPromotions, ChessboardPosition, MoveDeclarations, Pieces, PieceCosts, PieceValues, Sides, SpecialMoves } from "./piecetypes.js";
 import { allowedDeclarations, coordserialize, decodeSegment, defaultSettings, getCastleValues, getDataFromString, getDataString, measurePartiallyCaptured, objectsToGamePosition } from "./metatypes.js";
 import { chooseElement, chooseWeightedElement, random } from "./random.js";
 export const epsilon = 1e-10;
@@ -425,13 +425,12 @@ export function generateDependencies(declaredMove, quantumPos, winByCheckmate = 
 export function generateRandomDependency(declaredMove, quantumPos, winByCheckmate = defaultSettings.winByCheckmate) {
     return chooseElement(generateDependencies(declaredMove, quantumPos, winByCheckmate));
 }
-export function cleanEntanglements(units, makeCopy = false) {
-    const newUnits = makeCopy ? Fraction.fractionalClone(units) : units;
-    newUnits.forEach(unit => unit.entangledTo = unit.entangledTo.filter(entanglesUnit => newUnits.includes(entanglesUnit)));
-    return newUnits;
+export function cleanEntanglements(units) {
+    units.forEach(unit => unit.entangledTo = unit.entangledTo.filter(entanglesUnit => units.includes(entanglesUnit)));
+    return units;
 }
 export function makeMeasurement(quantumPos, dependency, measurementType = defaultSettings.measurementType, excludedSide, makeCopy = false) {
-    const newQuantumPos = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+    const newQuantumPos = makeCopy ? positionalClone(quantumPos) : quantumPos;
     const dependentUnit = findUnit(newQuantumPos.objects.filter(objectSet => objectSet.pieceType.side !== excludedSide), dependency);
     const dependentObject = newQuantumPos.objects.find(objectSet => objectSet.units.includes(dependentUnit));
     const measurementSet = [dependentUnit, ...dependentObject.units.filter(unit => unit.entangledTo.includes(dependentUnit))];
@@ -474,7 +473,7 @@ export function makeMeasurement(quantumPos, dependency, measurementType = defaul
 }
 export function generateMoveResults(declaredMove, quantumPos, winByCheckmate = defaultSettings.winByCheckmate, measurementType = defaultSettings.measurementType, makeCopy = false) {
     const startingPoint = generateStartMiddleEnd(declaredMove.move)[0];
-    const newQuantumPos = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+    const newQuantumPos = makeCopy ? positionalClone(quantumPos) : quantumPos;
     const playedObject = findObject(newQuantumPos, startingPoint);
     const unitIndex = playedObject.units.findIndex(unit => areCoordsEqual(unit.state, startingPoint));
     while ((possiblePositions => possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate)))(generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex))) {
@@ -483,8 +482,8 @@ export function generateMoveResults(declaredMove, quantumPos, winByCheckmate = d
     return [newQuantumPos, isMoveLegal(declaredMove, generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex)[0], winByCheckmate)];
 }
 export function generatePlayResults(play, quantumPos, settings = defaultSettings, makeCopy = false) {
-    const originalPos = Fraction.fractionalClone(quantumPos);
-    const newQuantumPos = makeCopy ? Fraction.fractionalClone(quantumPos) : quantumPos;
+    const originalPos = positionalClone(quantumPos);
+    const newQuantumPos = makeCopy ? positionalClone(quantumPos) : quantumPos;
     let playSound = Sounds.invalidated;
     if (!play.primaryMoves.length) {
         newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
@@ -518,7 +517,12 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
                     state: Object.assign(structuredClone(unit.state), {
                         probability: Fraction.quotient(unit.state.probability, new Fraction(localPrimaries.length)),
                     }),
-                    entangledTo: [],
+                    entangledTo: unit.entangledTo.slice(),
+                });
+                playedObject.units.forEach(entangledUnit => {
+                    if (entangledUnit.entangledTo.includes(unit)) {
+                        entangledUnit.entangledTo.push(playedObject.units[0]);
+                    }
                 });
                 if (isCapture(primaryMove.move, objectsToFilledPosition(newQuantumPos)) && captureDependencies.every(dependency => !areCoordsEqual(dependency[0], generateStartMiddleEnd(primaryMove.move)[2]))) {
                     captureDependencies.push([generateStartMiddleEnd(primaryMove.move)[2], getCapturedSquare(primaryMove.move)]);

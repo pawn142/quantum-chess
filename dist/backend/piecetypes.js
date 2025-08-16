@@ -249,6 +249,11 @@ export function objectsToFilledPosition(quantumPos) {
         otherData: structuredClone(quantumPos.otherData),
     };
 }
+export function positionalClone(quantumPos) {
+    const currentPos = Fraction.fractionalClone(quantumPos);
+    currentPos.objects.forEach(objectSet => objectSet.units.forEach(unit => unit.entangledTo = unit.entangledTo.map(entanglesUnit => findUnit([objectSet], entanglesUnit.state))));
+    return currentPos;
+}
 export function objectsToSparsePosition(quantumPos) {
     return {
         pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.filter(unit => unit.state.probability.equalTo(new Fraction)).map(unit => ({
