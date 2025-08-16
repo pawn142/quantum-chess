@@ -179,7 +179,7 @@ export interface ColoredPiece {
 
 export interface PositionedPiece {
 	state: WeightedCoord;
-	entangledTo: Coord[];
+	entangledTo: PositionedPiece[];
 }
 
 export interface IndexedPiece {
@@ -388,12 +388,11 @@ export class ChessboardPosition {
 		for (const objectSet of objects) {
 			for (const unit of objectSet.units) {
 				const squareIndex = coordToIndex(unit.state);
-				const possibleEntanglements: Set<string> = new Set(objectSet.units.filter(otherPiece => otherPiece !== unit).map(otherPiece => JSON.stringify(discardPromotion(otherPiece.state))));
 				assert(currentSquares[squareIndex] === undefined, "Multiple units on the same square in initialization of ChessboardPosition");
-				assert(unit.entangledTo.every(toCoord => possibleEntanglements.has(JSON.stringify(toCoord))), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
+				assert(unit.entangledTo.every(entanglesUnit => entanglesUnit !== unit && objectSet.units.includes(unit)), "Invalid entanglement to-coordinate in initialization of ChessboardPosition");
 				currentSquares[squareIndex] = {
 					ofIndex: currentPieces.length,
-					entangledTo: structuredClone(unit.entangledTo),
+					entangledTo: unit.entangledTo.map(entanglesUnit => discardPromotion(entanglesUnit.state)),
 					promotion: unit.state.promotion,
 				};
 			}
