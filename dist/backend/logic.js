@@ -503,15 +503,13 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
         const defaultBuildup = new Fraction(0);
         for (const primaryMove of localPrimaries) {
             if (generateMoveResults(primaryMove, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
+                splitMoved = successfullyMoved;
                 successfullyMoved = true;
                 if (moveType(primaryMove.move) === SpecialMoves.castle) {
                     castled = true;
                 }
                 if (primaryMove.move.end?.promotion) {
                     promoted = true;
-                }
-                if (localPrimaries.length > 1) {
-                    splitMoved = true;
                 }
                 playedObject.units.unshift({
                     state: Object.assign(structuredClone(unit.state), {
@@ -538,6 +536,7 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
             }
         }
         if (localDefault && defaultBuildup.numerator > 0 && generateMoveResults(localDefault, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
+            splitMoved = successfullyMoved;
             successfullyMoved = true;
             if (moveType(localDefault.move) === SpecialMoves.castle) {
                 castled = true;
@@ -616,7 +615,7 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
     if (splitMoved) {
         playSound = Sounds.split;
     }
-    if (calculateBoardValue(originalPos, true) - calculateBoardValue(newQuantumPos, true, newQuantumPos.otherData.whoseTurn) > epsilon || getSide(originalPos, newQuantumPos.otherData.whoseTurn).length > getSide(newQuantumPos).length) {
+    if (calculateBoardValue(originalPos, true) - calculateBoardValue(newQuantumPos, true, newQuantumPos.otherData.whoseTurn) > epsilon) {
         playSound = Sounds.capture;
     }
     ;
