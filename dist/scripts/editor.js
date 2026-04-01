@@ -177,14 +177,15 @@ export function setup() {
     window.gameSettings = meta.defaultSettings;
     window.visualSettings = tools.defaultVisuals;
     window.settingsMenu = document.getElementById("settings");
-    window.sounds = {};
-    window.sounds.capture = new Audio("assets/sounds/capture.webm");
-    window.sounds.move = new Audio("assets/sounds/move.webm");
-    window.sounds.check = new Audio("assets/sounds/check.mp3");
-    window.sounds.split = new Audio("assets/sounds/move.webm");
-    window.sounds.invalidated = new Audio("assets/sounds/illegal.webm");
-    window.sounds.castle = new Audio("assets/sounds/castle.mp3");
-    window.sounds.promote = new Audio("assets/sounds/promote.mp3");
+    window.sounds = {
+        capture: new Audio("assets/sounds/capture.webm"),
+        move: new Audio("assets/sounds/move.webm"),
+        check: new Audio("assets/sounds/check.mp3"),
+        split: new Audio("assets/sounds/split.mp3"),
+        invalidated: new Audio("assets/sounds/illegal.webm"),
+        castle: new Audio("assets/sounds/castle.mp3"),
+        promote: new Audio("assets/sounds/promote.mp3"),
+    };
     for (const coord of piece.chessboard) {
         const squareDiv = document.createElement("div");
         window.board.append(squareDiv);
@@ -340,7 +341,6 @@ export function importPosition() {
     if (logic.isValidStartingObjectsString(window.import_export.value)) {
         showPosition(logic.getObjectsFromString(window.import_export.value));
         clearPlay();
-        clearUndoTree();
     }
     else {
         console.log("Import failed");
