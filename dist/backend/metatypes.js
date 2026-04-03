@@ -246,7 +246,7 @@ export function validStartingPositionCheck(gamePosition) {
     }
     const properKeys = ["", ...Object.keys(defaultGamePosition.whitePosition)];
     const candidateKeys = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)];
-    return [gamePosition.otherData.qubits.whiteBalance, gamePosition.otherData.qubits.blackBalance].every(amount => amount >= 0) &&
+    return gamePosition.otherData.qubits.whiteBalance >= 0 && gamePosition.otherData.qubits.blackBalance >= 0 &&
         candidateKeys.every((key, keyIndex) => !key || properKeys.indexOf(key) > properKeys.indexOf(candidateKeys[keyIndex - 1])) &&
         candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
         [...filteredEntries(gamePosition.whitePosition), ...filteredEntries(gamePosition.blackPosition)].every((pieceEntry) => pieceEntry[1].states.reduce((accumulator, current) => ({

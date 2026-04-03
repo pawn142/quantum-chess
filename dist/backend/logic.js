@@ -295,8 +295,8 @@ export function generatePossiblePositions(quantumPos, fixedObjectIndex, fixedUni
 export function isMovePossible(declaredMove, quantumPos, winByCheckmate = defaultSettings.winByCheckmate) {
     return generatePossiblePositions(quantumPos).some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
 }
-export function isMoveAlwaysLegal(declaredMove, quantumPos, winByCheckmate = defaultSettings.winByCheckmate) {
-    return generatePossiblePositions(quantumPos).every(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
+export function isMoveAlwaysLegal(declaredMove, quantumPos, winByCheckmate = defaultSettings.winByCheckmate, fixedObjectIndex, fixedUnitIndex) {
+    return generatePossiblePositions(quantumPos, fixedObjectIndex, fixedUnitIndex).every(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
 }
 export function getLocalMoves(declaredMoves, unitCoord) {
     return declaredMoves.filter(declaredMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[0], unitCoord));
@@ -316,18 +316,18 @@ export function calculateQubitCost(play, objectSet, advancedQubitMode = defaultS
     }
     return currentCost * PieceCosts[objectSet.pieceType.type_p];
 }
-export function calculateBoardValue(quantumPos, partialQubitRewards = defaultSettings.partialQubitRewards, side = otherSide(quantumPos.otherData.whoseTurn)) {
-    return quantumPos.objects.map(objectSet => objectSet.pieceType.side === side ? PieceValues[objectSet.pieceType.type_p] * (num => partialQubitRewards ? num : Math.ceil(num))(Fraction.sum(...objectSet.units.map(unit => unit.state.probability)).value()) : 0).reduce((accumulator, current) => accumulator + current, 0);
+export function calculateBoardValue(quantumPos, partialQubitRewards = defaultSettings.partialQubitRewards, countKing = false, side = otherSide(quantumPos.otherData.whoseTurn)) {
+    return quantumPos.objects.map(objectSet => objectSet.pieceType.side === side ? (PieceValues[objectSet.pieceType.type_p] + (countKing && objectSet.pieceType.type_p === Pieces.king ? 10 : 0)) * (num => partialQubitRewards ? num : Math.ceil(num))(Fraction.sum(...objectSet.units.map(unit => unit.state.probability)).value()) : 0).reduce((accumulator, current) => accumulator + current, 0);
 }
 export function checkPlayValidity(play, quantumPos, settings = defaultSettings) {
     const playedObject = quantumPos.objects[play.objectIndex];
     const problems = new Set;
     if (!play.primaryMoves.length) {
-        return play.defaultMoves.length ? new Set(["Cannot have only default moves"]) : settings.nullPlays ? new Set() : new Set(["Null plays are not allowed in settings"]);
+        return new Set(play.defaultMoves.length ? ["Cannot have only default moves"] : settings.nullPlays ? (settings.winByCheckmate && generatePossiblePositions(quantumPos).some(completedPos => isInCheck(completedPos)) ? ["You might be in check"] : []) : ["Null plays are not allowed in settings"]);
     }
-    assert(!!playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
+    assert(playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
     if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0]))).isSubsetOf(allowedDeclarations(settings)))) {
-        problems.add("One or more external declarations are not allowed in settings");
+        problems.add("One or more external declarations are turned off in settings");
     }
     if (play.defaultMoves.some(defaultMove => play.primaryMoves.some(primaryMove => areCoordsEqual(generateStartMiddleEnd(primaryMove.move)[0], generateStartMiddleEnd(defaultMove.move)[0]) && areCoordsEqual(generateStartMiddleEnd(primaryMove.move)[2], generateStartMiddleEnd(defaultMove.move)[2])))) {
         problems.add("A default move cannot be equal to a primary move");
@@ -338,6 +338,17 @@ export function checkPlayValidity(play, quantumPos, settings = defaultSettings) 
     if (getPairsOfElements([...play.primaryMoves, ...play.defaultMoves]).some(movePair => areCoordsEqual(generateStartMiddleEnd(movePair[0].move)[2], generateStartMiddleEnd(movePair[1].move)[2]) && getCoordType(quantumPos, generateStartMiddleEnd(movePair[0].move)[0]) !== getCoordType(quantumPos, generateStartMiddleEnd(movePair[1].move)[0]))) {
         problems.add("Units with different promotion values are not mergeable");
     }
+    if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => {
+        const stackedUnit = findUnit([playedObject], generateStartMiddleEnd(declaredMove.move)[2]);
+        if (!stackedUnit) {
+            return false;
+        }
+        const stackedObjectIndex = quantumPos.objects.indexOf(findObject(quantumPos, stackedUnit.state));
+        const stackedUnitIndex = findObject(quantumPos, stackedUnit.state).units.indexOf(stackedUnit);
+        return getUnitType(quantumPos, stackedUnit) !== getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0]) && !(localPrimaries => localPrimaries.length && localPrimaries.every(escapeMove => isMoveAlwaysLegal(escapeMove, quantumPos, settings.winByCheckmate, stackedObjectIndex, stackedUnitIndex)))(getLocalMoves(play.primaryMoves, stackedUnit.state)) && !(escapeDefault => escapeDefault && isMoveAlwaysLegal(escapeDefault, quantumPos, settings.winByCheckmate, stackedObjectIndex, stackedUnitIndex))(getLocalMoves(play.defaultMoves, stackedUnit.state)[0]);
+    })) {
+        problems.add("Possibility for stacking of different promotion values");
+    }
     const unitPositions = new Set(playedObject.units.map(unit => JSON.stringify(discardPromotion(unit.state))));
     if (play.primaryMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
         problems.add("One or more primary moves are impossible");
@@ -345,7 +356,7 @@ export function checkPlayValidity(play, quantumPos, settings = defaultSettings) 
     if (play.defaultMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
         problems.add("One or more default moves are impossible");
     }
-    if (getRespectiveQubitAmount(quantumPos.otherData) - calculateQubitCost(play, playedObject, settings.advancedQubitMode) < -epsilon) {
+    if (calculateQubitCost(play, playedObject, settings.advancedQubitMode) - getRespectiveQubitAmount(quantumPos.otherData) > epsilon) {
         problems.add("Not enough qubits for play");
     }
     playedObject.units.forEach((unit, unitIndex) => {
@@ -358,13 +369,16 @@ export function checkPlayValidity(play, quantumPos, settings = defaultSettings) 
             problems.add("Cannot have a default move without a corresponding primary move");
         }
         if (!settings.allowCastling && [...localPrimaries, ...localDefaults].some(declaredMove => moveType(declaredMove.move) === SpecialMoves.castle)) {
-            problems.add("Castling is not allowed in settings");
+            problems.add("Castling is turned off in settings");
         }
         if (!settings.castleSplitting && localPrimaries.length > 1 && [...localPrimaries, ...localDefaults].some(declaredMove => moveType(declaredMove.move) === SpecialMoves.castle)) {
-            problems.add("Making a split move while castling is not allowed in settings");
+            problems.add("Making a split move while castling is turned off in settings");
+        }
+        if (localPrimaries.some(declaredMove => moveType(declaredMove.move) === SpecialMoves.castle && localPrimaries.some(otherMove => areCoordsEqual(generateStartMiddleEnd(declaredMove.move)[1][0], generateStartMiddleEnd(otherMove.move)[2])))) {
+            problems.add("Cannot join the king and rook when making a split move while castling");
         }
         if (!settings.pawnDoubleMoveSplitting && localPrimaries.length > 1 && [...localPrimaries, ...localDefaults].some(declaredMove => moveType(declaredMove.move) === SpecialMoves.pawnDoubleMove)) {
-            problems.add("Making a split move while making a pawn double move is not allowed in settings");
+            problems.add("Making a split move while making a pawn double move is turned off in settings");
         }
         if (settings.winByCheckmate && generatePossiblePositions(quantumPos, play.objectIndex, unitIndex).some(completedPos => isInCheck(completedPos) && !(localDefaults[0] && isMoveLegal(localDefaults[0], completedPos, true)) && (!localPrimaries.length || localPrimaries.some(declaredMove => !isMoveLegal(declaredMove, completedPos, true))))) {
             problems.add("Not all possible outcomes resolve check");
@@ -385,7 +399,7 @@ export function getCheckingDependencies(checkedCoords, quantumPos, side, firstMo
             possiblePositions.forEach(completedPos => getResultOfMove(firstMove, completedPos));
         }
         return possiblePositions.some(completedPos => predicate(completedPos)) && possiblePositions.some(completedPos => !predicate(completedPos));
-    })(generatePossiblePositions(quantumPos, playedObject ? quantumPos.objects.indexOf(playedObject) : undefined, firstMove ? playedObject?.units.findIndex(unit => areCoordsEqual(unit.state, generateStartMiddleEnd(firstMove)[0])) : undefined), ((completedPos) => !!findPiece(completedPos, checkedCoord) && !!findPiece(completedPos, checkingPiece.state) && (actualType(checkingPiece) === Pieces.knight || !isBlocked({
+    })(generatePossiblePositions(quantumPos, playedObject ? quantumPos.objects.indexOf(playedObject) : undefined, firstMove ? playedObject?.units.findIndex(unit => areCoordsEqual(unit.state, generateStartMiddleEnd(firstMove)[0])) : undefined), ((completedPos) => findPiece(completedPos, checkedCoord) && findPiece(completedPos, checkingPiece.state) && (actualType(checkingPiece) === Pieces.knight || !isBlocked({
         start: checkingPiece.state,
         end: checkedCoord,
     }, completedPos)))) ? (actualType(checkingPiece) === Pieces.knight ? [] : getBlockingPieces({
@@ -406,13 +420,13 @@ export function generateDependencies(declaredMove, quantumPos, winByCheckmate = 
         currentDependencies.push(...significantSquares[1].filter(coord => areOfDifferentObjects(quantumPos, coord, significantSquares[0])));
     }
     if (winByCheckmate) {
-        currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, Pieces.king).units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, quantumPos.otherData.whoseTurn, declaredMove.move, playedObject));
+        currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos).units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, quantumPos.otherData.whoseTurn, declaredMove.move, playedObject));
         if (moveType(declaredMove.move) === SpecialMoves.castle) {
             currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]], quantumPos, quantumPos.otherData.whoseTurn, declaredMove.move, playedObject));
         }
     }
     if (declaredMove.declarations.has(MoveDeclarations.checkOnly) || declaredMove.declarations.has(MoveDeclarations.noCheck)) {
-        currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, Pieces.king, otherSide(quantumPos.otherData.whoseTurn)).units.map(unit => discardPromotion(unit.state)), quantumPos, otherSide(quantumPos.otherData.whoseTurn), declaredMove.move, playedObject));
+        currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, otherSide(quantumPos.otherData.whoseTurn)).units.map(unit => discardPromotion(unit.state)), quantumPos, otherSide(quantumPos.otherData.whoseTurn), declaredMove.move, playedObject));
     }
     const filteredDependencies = [];
     currentDependencies.forEach(dependency => {
@@ -487,6 +501,7 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
     let playSound = Sounds.invalidated;
     if (!play.primaryMoves.length) {
         newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
+        newQuantumPos.otherData.enpassant = false;
         return [newQuantumPos, playSound, false];
     }
     const playedObject = newQuantumPos.objects[play.objectIndex];
@@ -503,14 +518,10 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
         const defaultBuildup = new Fraction(0);
         for (const primaryMove of localPrimaries) {
             if (generateMoveResults(primaryMove, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
-                splitMoved = successfullyMoved;
                 successfullyMoved = true;
-                if (moveType(primaryMove.move) === SpecialMoves.castle) {
-                    castled = true;
-                }
-                if (primaryMove.move.end?.promotion) {
-                    promoted = true;
-                }
+                splitMoved ||= localPrimaries.length > 1;
+                castled ||= moveType(primaryMove.move) === SpecialMoves.castle;
+                promoted ||= !!primaryMove.move.end?.promotion;
                 playedObject.units.unshift({
                     state: Object.assign(structuredClone(unit.state), {
                         probability: Fraction.quotient(unit.state.probability, new Fraction(localPrimaries.length)),
@@ -527,30 +538,21 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
                 }
                 makeMove(primaryMove.move, newQuantumPos);
                 playedObject.units.push(playedObject.units.splice(0, 1)[0]);
-                if (moveType(primaryMove.move) === SpecialMoves.pawnDoubleMove) {
-                    newEnpassant = true;
-                }
+                newEnpassant ||= moveType(primaryMove.move) === SpecialMoves.pawnDoubleMove;
             }
             else {
                 defaultBuildup.add(Fraction.quotient(unit.state.probability, new Fraction(localPrimaries.length)));
             }
         }
         if (localDefault && defaultBuildup.numerator > 0 && generateMoveResults(localDefault, newQuantumPos, settings.winByCheckmate, settings.measurementType)[1]) {
-            splitMoved = successfullyMoved;
             successfullyMoved = true;
-            if (moveType(localDefault.move) === SpecialMoves.castle) {
-                castled = true;
-            }
-            if (localDefault.move.end?.promotion) {
-                promoted = true;
-            }
+            castled ||= moveType(localDefault.move) === SpecialMoves.castle;
+            promoted ||= !!localDefault.move.end?.promotion;
             if (isCapture(localDefault.move, objectsToFilledPosition(newQuantumPos)) && captureDependencies.every(dependency => !areCoordsEqual(dependency[0], generateStartMiddleEnd(localDefault.move)[2]))) {
                 captureDependencies.push([generateStartMiddleEnd(localDefault.move)[2], getCapturedSquare(localDefault.move)]);
             }
             makeMove(localDefault.move, newQuantumPos);
-            if (moveType(localDefault.move) === SpecialMoves.pawnDoubleMove) {
-                newEnpassant = true;
-            }
+            newEnpassant ||= moveType(localDefault.move) === SpecialMoves.pawnDoubleMove;
         }
         if (localPrimaries.length) {
             unit.state.probability = defaultBuildup;
@@ -570,16 +572,14 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
     });
     cleanEntanglements(playedObject.units);
     for (const captureDependency of captureDependencies) {
-        if (findUnit(getSide(newQuantumPos, quantumPos.otherData.whoseTurn), captureDependency[0]) && (!measurePartiallyCaptured(findObject(quantumPos, captureDependency[1]).pieceType.type_p) || makeMeasurement(newQuantumPos, captureDependency[1], settings.measurementType, quantumPos.otherData.whoseTurn)[1]) && makeMeasurement(newQuantumPos, captureDependency[0], settings.measurementType, otherSide(quantumPos.otherData.whoseTurn))[1]) {
+        if (findObject(newQuantumPos, captureDependency[0]) && (!measurePartiallyCaptured(findObject(quantumPos, captureDependency[1]).pieceType.type_p) || makeMeasurement(newQuantumPos, captureDependency[1], settings.measurementType, quantumPos.otherData.whoseTurn)[1]) && makeMeasurement(newQuantumPos, captureDependency[0], settings.measurementType, otherSide(quantumPos.otherData.whoseTurn))[1]) {
             const capturedUnit = findUnit(getSide(newQuantumPos, otherSide(quantumPos.otherData.whoseTurn)), captureDependency[1]);
             const capturedObject = newQuantumPos.objects.find(objectSet => objectSet.units.includes(capturedUnit));
             capturedObject.units.splice(capturedObject.units.indexOf(capturedUnit), 1);
             cleanEntanglements(capturedObject.units);
-            if (!capturedObject.units.length) {
-                newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(capturedObject), 1);
-            }
         }
     }
+    newQuantumPos.objects = newQuantumPos.objects.filter(objectSet => objectSet.units.length);
     newQuantumPos.otherData.qubits[quantumPos.otherData.whoseTurn === Sides.white ? "whiteBalance" : "blackBalance"] += calculateBoardValue(originalPos, settings.partialQubitRewards) - calculateBoardValue(newQuantumPos, settings.partialQubitRewards);
     (qubitAmount => {
         if (Math.abs(qubitAmount - Math.round(qubitAmount)) < epsilon) {
@@ -596,7 +596,7 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
     newQuantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
     newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
     if (settings.winByCheckmate) {
-        const kingUnits = findObjectFromType(newQuantumPos, Pieces.king).units;
+        const kingUnits = findObjectFromType(newQuantumPos).units;
         kingUnits.slice().forEach(unit => {
             while (kingUnits.includes(unit) && getCheckingDependencies([unit.state], newQuantumPos, newQuantumPos.otherData.whoseTurn).length) {
                 makeMeasurement(newQuantumPos, chooseElement(getCheckingDependencies([unit.state], newQuantumPos, newQuantumPos.otherData.whoseTurn)));
@@ -609,20 +609,20 @@ export function generatePlayResults(play, quantumPos, settings = defaultSettings
     if (castled) {
         playSound = Sounds.castle;
     }
-    if (promoted) {
-        playSound = Sounds.promote;
-    }
     if (splitMoved) {
         playSound = Sounds.split;
     }
-    if (calculateBoardValue(originalPos, true) - calculateBoardValue(newQuantumPos, true, newQuantumPos.otherData.whoseTurn) > epsilon) {
+    if (calculateBoardValue(originalPos, true, true) - calculateBoardValue(newQuantumPos, true, true, newQuantumPos.otherData.whoseTurn) > epsilon) {
         playSound = Sounds.capture;
     }
     ;
+    if (promoted) {
+        playSound = Sounds.promote;
+    }
     if (settings.winByCheckmate && isInCheck(objectsToFilledPosition(quantumPos))) {
         playSound = Sounds.check;
     }
-    return [newQuantumPos, playSound, settings.winByCheckmate ? detectCheckmate(newQuantumPos) : !findObjectFromType(newQuantumPos, Pieces.king)];
+    return [newQuantumPos, playSound, (settings.winByCheckmate ? detectCheckmate(newQuantumPos) : !findObjectFromType(newQuantumPos)) ? originalPos.otherData.whoseTurn : findObjectFromType(newQuantumPos, originalPos.otherData.whoseTurn) ? false : newQuantumPos.otherData.whoseTurn];
 }
 export function candidateMoves(unit, quantumPos, side = quantumPos.objects.find(objectSet => objectSet.units.includes(unit)).pieceType.side) {
     const rawType = getUnitType(quantumPos, unit);
@@ -635,7 +635,7 @@ export function candidateMoves(unit, quantumPos, side = quantumPos.objects.find(
         start: discardPromotion(unit.state),
         end: structuredClone(coord),
     }).filter(move => isInRange(move, rawType, side));
-    if (quantumPos.otherData.enpassant && !findUnit(getSide(quantumPos, otherSide(side)), quantumPos.otherData.enpassant)) {
+    if (rawType === Pieces.pawn && quantumPos.otherData.enpassant && !findObject(quantumPos, quantumPos.otherData.enpassant)) {
         const removeIndex = currentMoves.findIndex(move => areCoordsEqual(move.end, quantumPos.otherData.enpassant));
         if (removeIndex !== -1) {
             currentMoves.push({
@@ -746,14 +746,14 @@ export function getObjectsFromString(positionString) {
         otherData: getDataFromString(components[0]),
     };
 }
-export function validStartingObjectsCheck(objectPosition) {
+export function areValidObjects(objectPosition) {
     try {
         new ChessboardPosition(objectPosition.objects);
     }
     catch {
         return false;
     }
-    return [objectPosition.otherData.qubits.whiteBalance, objectPosition.otherData.qubits.blackBalance].every(amount => amount >= 0) &&
+    return objectPosition.otherData.qubits.whiteBalance >= 0 && objectPosition.otherData.qubits.blackBalance >= 0 &&
         objectPosition.objects.every(objectSet => objectSet.units.reduce((accumulator, current) => ({
             state: {
                 x: 1,
@@ -761,26 +761,25 @@ export function validStartingObjectsCheck(objectPosition) {
                 probability: Fraction.sum(accumulator.state.probability, current.state.probability),
             },
             entangledTo: [],
-        })).state.probability.lessThanOrEqualTo(new Fraction) && objectSet.units.every(unit => unit.state.probability.numerator > 0 && unit.state.probability.denominator > 0) && (objectSet.pieceType.type_p !== Pieces.pawn || objectSet.units.every(unit => (![1, 8].includes(unit.state.y) || unit.state.promotion) && validPromotions.has(unit.state.promotion))) && (objectSet.pieceType.type_p === Pieces.pawn || objectSet.units.every(unit => unit.state.promotion === undefined))) &&
-        (!objectPosition.otherData.enpassant || isCoord(objectPosition.otherData.enpassant) && [3, 6].includes(objectPosition.otherData.enpassant.y) && objectPosition.objects.some(objectSet => objectSet.pieceType.type_p === Pieces.pawn && objectSet.pieceType.side === otherSide(objectPosition.otherData.whoseTurn) && objectSet.units.some(unit => !unit.state.promotion && areCoordsEqual(translateCoord(unit.state, 0, enpassantDisplacement(objectPosition.otherData.whoseTurn), true), objectPosition.otherData.enpassant)))) &&
-        (!objectPosition.otherData.castling.canWhiteCastleLeft || getCastleValues(objectsToGamePosition(objectPosition))[0]) &&
-        (!objectPosition.otherData.castling.canWhiteCastleRight || getCastleValues(objectsToGamePosition(objectPosition))[1]) &&
-        (!objectPosition.otherData.castling.canBlackCastleLeft || getCastleValues(objectsToGamePosition(objectPosition))[2]) &&
-        (!objectPosition.otherData.castling.canBlackCastleRight || getCastleValues(objectsToGamePosition(objectPosition))[3]);
+        })).state.probability.lessThanOrEqualTo(new Fraction) && objectSet.units.every(unit => unit.state.probability.numerator > 0 && unit.state.probability.denominator > 0 && (objectSet.pieceType.type_p !== Pieces.pawn || objectSet.units.every(unit => (![1, 8].includes(unit.state.y) || unit.state.promotion) && validPromotions.has(unit.state.promotion))) && (objectSet.pieceType.type_p === Pieces.pawn || objectSet.units.every(unit => unit.state.promotion === undefined))));
 }
-export function isValidStartingObjectsString(candidateString) {
+export function isValidObjectsString(candidateString) {
     try {
-        return validStartingObjectsCheck(getObjectsFromString(candidateString)) && getObjectsString(getObjectsFromString(candidateString)) === candidateString;
+        return areValidObjects(getObjectsFromString(candidateString)) && getObjectsString(getObjectsFromString(candidateString)) === candidateString;
     }
     catch {
         return false;
     }
 }
-export function areValidStartingObjects(candidatePosition) {
-    try {
-        return isValidStartingObjectsString(getObjectsString(candidatePosition));
-    }
-    catch {
-        return false;
-    }
+export function isLegalPosition(quantumPos) {
+    return areValidObjects(quantumPos) &&
+        getSide(quantumPos, Sides.white).filter(objectSet => objectSet.pieceType.type_p === Pieces.king).length === 1 && getSide(quantumPos, Sides.black).filter(objectSet => objectSet.pieceType.type_p === Pieces.king).length === 1 &&
+        (!quantumPos.otherData.enpassant || isCoord(quantumPos.otherData.enpassant) && [3, 6].includes(quantumPos.otherData.enpassant.y) && quantumPos.objects.some(objectSet => objectSet.pieceType.type_p === Pieces.pawn && objectSet.pieceType.side === otherSide(quantumPos.otherData.whoseTurn) && objectSet.units.some(unit => !unit.state.promotion && areCoordsEqual(translateCoord(unit.state, 0, enpassantDisplacement(quantumPos.otherData.whoseTurn), true), quantumPos.otherData.enpassant))) && !areOfDifferentObjects(quantumPos, quantumPos.otherData.enpassant, translateCoord(quantumPos.otherData.enpassant, 0, -enpassantDisplacement(quantumPos.otherData.whoseTurn), true))) &&
+        (!quantumPos.otherData.castling.canWhiteCastleLeft || getCastleValues(objectsToGamePosition(quantumPos))[0]) &&
+        (!quantumPos.otherData.castling.canWhiteCastleRight || getCastleValues(objectsToGamePosition(quantumPos))[1]) &&
+        (!quantumPos.otherData.castling.canBlackCastleLeft || getCastleValues(objectsToGamePosition(quantumPos))[2]) &&
+        (!quantumPos.otherData.castling.canBlackCastleRight || getCastleValues(objectsToGamePosition(quantumPos))[3]);
+}
+export function isLegalPositionString(candidateString) {
+    return isValidObjectsString(candidateString) && isLegalPosition(getObjectsFromString(candidateString));
 }

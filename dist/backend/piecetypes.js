@@ -179,7 +179,7 @@ export function getUnitType(quantumPos, unit) {
 export function getSide(quantumPos, side = quantumPos.otherData.whoseTurn) {
     return quantumPos.objects.filter(objectSet => objectSet.pieceType.side === side);
 }
-export function findObjectFromType(quantumPos, rawType, side) {
+export function findObjectFromType(quantumPos, side, rawType = Pieces.king) {
     return getSide(quantumPos, side).find(objectSet => objectSet.pieceType.type_p === rawType);
 }
 export function areOfDifferentObjects(quantumPos, coordOne, coordTwo) {
