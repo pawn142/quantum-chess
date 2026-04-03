@@ -11,7 +11,7 @@ import * as tools from "./toolbox.js";
 
 export function clearBoardElements(): void {
 	for (let i = 0; i < 64; ++i) {
-		const unitDiv: HTMLDivElement | null = document.getElementById(i.toString());
+		const unitDiv: HTMLDivElement | null = document.getElementById(i);
 		if (unitDiv) {
 			unitDiv.remove();
 		}
@@ -47,30 +47,38 @@ export function clearBoard(): void {
 
 export function removeAnnotation(): void {
 	if (window.annotation) {
-		window.annotation.style["background-color"] = "transparent";
+		window.annotation.style["background-color"] = window.selection && document.getElementById(window.annotation.index) && !piece.areOfDifferentObjects(window.position, window.selection.coord, window.annotation.coord) ? "#faf999" : "transparent";
 		window.annotation = undefined;
 	}
 }
 
 export function removeSelection(): void {
-	if (window.selection) {
-		window.selection.style["background-color"] = "transparent";
-		window.selection = undefined;
+	for (let i = 0; i < 64; ++i) {
+		const squareDiv: HTMLDivElement = window["square" + i];
+		if (["yellow", "rgb(250, 249, 153)"].includes(squareDiv.style["background-color"])) {
+			squareDiv.style["background-color"] = "transparent";
+		}
 	}
+	window.selection = undefined;
 }
 
 export function updateTurnCounter(): void {
 	if (window.gameOver) {
-		window.turnCounter.innerHTML = (window.position.otherData.whoseTurn === piece.Sides.white ? "Black" : "White") + " wins";
-		window.turnCounter.style.color = piece.otherSide(window.position.otherData.whoseTurn);
+		window.turnCounter.innerHTML = (window.gameOver === piece.Sides.white ? "White" : "Black") + " wins";
+		window.turnCounter.style.color = window.gameOver;
 	} else {
 		window.turnCounter.innerHTML = (window.position.otherData.whoseTurn === piece.Sides.white ? "White" : "Black") + " to move";
 		window.turnCounter.style.color = window.position.otherData.whoseTurn;
 	}
 }
 
-export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary" | "default", color = type === "primary" ? "white" : window.ringColor): void {
+export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary" | "default", checkPosition: boolean = false): boolean {
+	if (checkPosition && !logic.isLegalPosition(window.position)) {
+		alert("Cannot input move in an illegal position");
+		return false;
+	}
 	const arrow = document.createElement("div");
+	const color = type === "primary" ? "white" : window.ringColor;
 	arrow.className = "arrow " + type;
 	arrow.id = type[0] + start.x + start.y + end.x + end.y;
 	arrow.index = type === "primary" ? window.play.primaryMoves.length : window.play.defaultMoves.length;
@@ -101,6 +109,7 @@ export function createArrow(start: piece.Coord, end: piece.Coord, type: "primary
 		"border-bottom-width": "3vh",
 		"border-color": "transparent transparent transparent " + color,
 	});
+	return true;
 }
 
 export function showPlay(play: piece.Play): void {
@@ -119,7 +128,7 @@ export function showPlay(play: piece.Play): void {
 export function showPosition(objectPosition: piece.ObjectPosition): void {
 	clearBoardElements();
 	const mainPerspective: boolean = window.visualSettings.perspective === piece.Sides.white;
-	window.arrowpool.style.rotate = mainPerspective ? "0" : "180deg";
+	window.arrowpool.style.rotate = mainPerspective ? "0deg" : "180deg";
 	window.whiteCoordinates.style.visibility = window.visualSettings.showCoordinates && mainPerspective ? "visible" : "hidden";
 	window.blackCoordinates.style.visibility = window.visualSettings.showCoordinates && !mainPerspective ? "visible" : "hidden";
 	for (let i = 0; i < 64; ++i) {
@@ -151,7 +160,7 @@ export function showPosition(objectPosition: piece.ObjectPosition): void {
 			}
 			const unitImg: HTMLImageElement = tools.createCover(unitDiv, "img");
 			unitImg.src = tools.getPieceImage(unit.state.promotion ?? object.pieceType.type_p, object.pieceType.side);
-			if (window.gameOver && object.pieceType.type_p === piece.Pieces.king && object.pieceType.side === objectPosition.otherData.whoseTurn) {
+			if (object.pieceType.type_p === piece.Pieces.king && piece.otherSide(object.pieceType.side) === window.gameOver) {
 				unitImg.style.rotate = "-90deg";
 			}
 		}
@@ -179,28 +188,31 @@ export function regeneratePosition(): void {
 export function setup(): void {
 	random.clear();
 	random.addRandomToStream(10000);
-	window.ringColor = "rgba(255, 42, 81, 0.8)";
-	window.board = document.getElementById("board");
+	Object.assign(window, {
+		ringColor: "rgba(255, 42, 81, 0.8)",
+		board: document.getElementById("board"),
+		arrowpool: tools.createCover(window.board),
+		whiteCoordinates: document.getElementById("coordinates-white"),
+		blackCoordinates: document.getElementById("coordinates-black"),
+		turnCounter: document.getElementById("turn-counter"),
+		import_export: document.getElementById("import-export"),
+		volumeSlider: document.querySelector(".slider"),
+		gameSettings: meta.defaultSettings,
+		visualSettings: tools.defaultVisuals,
+		settingsMenu: document.getElementById("settings"),
+		sounds: {
+			capture: new Audio("assets/sounds/capture.webm"),
+			move: new Audio("assets/sounds/move.webm"),
+			check: new Audio("assets/sounds/check.mp3"),
+			split: new Audio("assets/sounds/split.mp3"),
+			invalidated: new Audio("assets/sounds/illegal.webm"),
+			castle: new Audio("assets/sounds/castle.mp3"),
+			promote: new Audio("assets/sounds/promote.mp3"),
+		},
+		checkmateSetting: document.querySelector(".option.no1"),
+	});
 	window.board.style.height = 200 / 3 + "%";
-	window.arrowpool = tools.createCover(window.board);
 	window.arrowpool.style["z-index"] = "1";
-	window.whiteCoordinates = document.getElementById("coordinates-white");
-	window.blackCoordinates = document.getElementById("coordinates-black");
-	window.turnCounter = document.getElementById("turn-counter");
-	window.import_export = document.getElementById("import-export");
-	window.volumeSlider = document.querySelector(".slider");
-	window.gameSettings = meta.defaultSettings;
-	window.visualSettings = tools.defaultVisuals;
-	window.settingsMenu = document.getElementById("settings");
-	window.sounds = {
-		capture: new Audio("assets/sounds/capture.webm"),
-		move: new Audio("assets/sounds/move.webm"),
-		check: new Audio("assets/sounds/check.mp3"),
-		split: new Audio("assets/sounds/split.mp3"),
-		invalidated: new Audio("assets/sounds/illegal.webm"),
-		castle: new Audio("assets/sounds/castle.mp3"),
-		promote: new Audio("assets/sounds/promote.mp3"),
-	};
 	for (const coord of piece.chessboard) {
 		const squareDiv: HTMLDivElement = document.createElement("div");
 		window.board.append(squareDiv);
@@ -215,13 +227,16 @@ export function setup(): void {
 		});
 		function handleClick(clickType: "left" | "right"): void {
 			function switchSelection(): void {
-				if (window.annotation && piece.areCoordsEqual(window.annotation.coord, coord)) {
+				if (window.annotation && document.getElementById(window.annotation.index) && !piece.areOfDifferentObjects(window.position, window.annotation.coord, coord)) {
 					removeAnnotation();
 				}
 				if (window.play.objectIndex && !window.position.objects[window.play.objectIndex].units.includes(piece.findUnit(piece.getSide(window.position), coord))) {
 					clearPlay();
 				}
 				removeSelection();
+				for (const unit of piece.findObject(window.position, coord).units) {
+					window["square" + piece.coordToIndex(unit.state)].style["background-color"] = "#faf999";
+				}
 				squareDiv.style["background-color"] = "yellow";
 				window.selection = squareDiv;
 				window.play.objectIndex = window.position.objects.indexOf(piece.findObject(window.position, coord));
@@ -243,8 +258,9 @@ export function setup(): void {
 								previousArrow.remove();
 								delete window.play.primaryMoves[previousArrow.index];
 							} else {
-								createArrow(window.selection.coord, coord, "primary");
-								window.play.primaryMoves.push(matchingMove);
+								if (createArrow(window.selection.coord, coord, "primary", true)) {
+									window.play.primaryMoves.push(matchingMove);
+								}
 							}
 						} else {
 							if (clickType === "right") {
@@ -254,16 +270,18 @@ export function setup(): void {
 						}
 					} else {
 						if (clickType === "left") {
-							createArrow(window.selection.coord, coord, "primary");
-							window.play.primaryMoves.push(matchingMove);
+							if (createArrow(window.selection.coord, coord, "primary", true)) {
+								window.play.primaryMoves.push(matchingMove);
+							}
 						} else {
 							const replacedDefault: HTMLDivElement | null = document.querySelector(`[id^="${'d' + window.selection.coord.x + window.selection.coord.y}"]`);
 							if (replacedDefault) {
 								replacedDefault.remove();
 								delete window.play.defaultMoves[window.play.defaultMoves.findIndex(defaultMove => defaultMove && piece.areCoordsEqual(logic.generateStartMiddleEnd(defaultMove.move)[0], window.selection.coord))];
 							}
-							createArrow(window.selection.coord, coord, "default");
-							window.play.defaultMoves.push(matchingMove);
+							if (createArrow(window.selection.coord, coord, "default", true)) {
+								window.play.defaultMoves.push(matchingMove);
+							}
 						}
 					}
 					return;
@@ -311,13 +329,52 @@ export function setup(): void {
 		plays: [],
 	};
 	resetPosition();
+	window.checkmateSetting.addEventListener("click", (event) => {
+		if (attemptChange(true)) {
+			event.preventDefault();
+		}
+	});
+}
+
+export function attemptChange(msgType: boolean = false): undefined | true {
+	if (window.gameSettings.winByCheckmate) {
+		window.gameSettings.winByCheckmate = false;
+	} else {
+		let message;
+		if (logic.isLegalPosition(window.position)) {
+			if (logic.generatePossiblePositions(window.position).some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, piece.otherSide(window.position.otherData.whoseTurn)) || logic.isInCheck(completedPos, piece.otherSide(window.position.otherData.whoseTurn)))) {
+				message = "The inactive player's king is already endangered";
+			} else if (logic.generatePossiblePositions(window.position).some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, window.position.otherData.whoseTurn) || logic.detectCheckmate(piece.completedPositionToObjects(completedPos)))) {
+				message = "The active player may already be in checkmate";
+			}
+		}
+		if (message) {
+			alert((msgType ? "Unable to set win by checkmate: " : "Win by checkmate turned off: ") + message);
+			return true;
+		} else {
+			window.gameSettings.winByCheckmate = true;
+		}
+	}
+}
+
+export function resetWinByMate(value: boolean = logic.isLegalPosition(window.position)): void {
+	if (value) {
+		const original: boolean = window.gameSettings.winByCheckmate;
+		window.gameSettings.winByCheckmate = false;
+		window.checkmateSetting.checked = false;
+		if (original) {
+			attemptChange();
+		}
+	}
 }
 
 export function changeSide(): void {
 	if (!window.gameOver) {
 		clearPlay();
 		window.position.otherData.whoseTurn = piece.otherSide(window.position.otherData.whoseTurn);
+		window.position.otherData.enpassant = false;
 		updateTurnCounter();
+		resetWinByMate();
 	}
 }
 
@@ -343,12 +400,15 @@ export function toggleInfiniteQubits(side: keyof typeof piece.Sides): void {
 	}
 }
 
-export function importPosition(): void {
-	if (logic.isValidStartingObjectsString(window.import_export.value)) {
-		showPosition(logic.getObjectsFromString(window.import_export.value));
-		clearPlay();
+export function importPosition(skipConfirmation: boolean = false): void {
+	if (logic.isValidObjectsString(window.import_export.value)) {
+		if (skipConfirmation || logic.isLegalPositionString(window.import_export.value) || confirm("Import illegal position?")) {
+			showPosition(logic.getObjectsFromString(window.import_export.value));
+			clearPlay();
+			resetWinByMate(true);
+		}
 	} else {
-		console.log("Import failed");
+		alert("Import failed: Invalid objects");
 	}
 }
 
@@ -356,18 +416,12 @@ export function exportPosition(): void {
 	window.import_export.value = logic.getObjectsString(window.position);
 }
 
-export function setVolume(): void {
-	for (const sound of Object.keys(tools.Sounds)) {
-		window.sounds[sound].volume = window.volumeSlider.value / 100;
-	}
-}
-
 export function makePlay(): void {
 	const filteredPlay: piece.Play = structuredClone(window.play);
 	filteredPlay.primaryMoves = filteredPlay.primaryMoves.filter(i => i);
 	filteredPlay.defaultMoves = filteredPlay.defaultMoves.filter(i => i);
 	if (!logic.isPlayLegal(filteredPlay, window.position, window.gameSettings)) {
-		console.log("Play failed: " + [...logic.checkPlayValidity(filteredPlay, window.position, window.gameSettings)][0]);
+		alert("Play failed: " + [...logic.checkPlayValidity(filteredPlay, window.position, window.gameSettings)][0]);
 		return;
 	}
 	window.play.primaryMoves = filteredPlay.primaryMoves;
@@ -378,7 +432,6 @@ export function makePlay(): void {
 	previousPosition.push(playResults[1], playResults[2]);
 	window.previous.positions.push(previousPosition);
 	window.previous.plays.push(window.play);
-	setVolume();
 	tools.playSound(window.sounds[playResults[1]]);
 	window.gameOver = playResults[2];
 	showPosition(playResults[0]);
@@ -405,7 +458,6 @@ export function redoPlay(): void {
 	if (window.redo.positions.length) {
 		window.previous.positions.push([piece.positionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
 		window.previous.plays.push(window.play);
-		setVolume();
 		tools.playSound(window.sounds[window.redo.positions.at(-1)[1]]);
 		window.gameOver = window.redo.positions.at(-1)[2];
 		showPosition(window.redo.positions.at(-1)[0]);

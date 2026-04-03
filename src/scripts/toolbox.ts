@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { defaultData, Pieces, Sides } from "../backend/piecetypes.js";
 
 export interface VisualSettings {
@@ -11,7 +13,7 @@ export const defaultVisuals: VisualSettings = {
 	perspective: defaultData.whoseTurn,
 	showFullRings: false,
 	fillRingCenters: false,
-	showCoordinates: false,
+	showCoordinates: true,
 } as const;
 
 export const Sounds = {
@@ -37,7 +39,7 @@ export function createCover(parent: HTMLElement, elementType: string = "div"): H
 }
 
 export function playSound(sound: HTMLAudioElement): void {
-	sound.pause();
-	sound.currentTime = 0;
-	sound.play();
+	const copySound: HTMLAudioElement = sound.cloneNode() as HTMLAudioElement;
+	copySound.volume = window.volumeSlider.value / 100;
+	copySound.play();
 }

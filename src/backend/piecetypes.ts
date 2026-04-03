@@ -261,7 +261,7 @@ export function getSide(quantumPos: ObjectPosition, side: keyof typeof Sides = q
 	return quantumPos.objects.filter(objectSet => objectSet.pieceType.side === side);
 }
 
-export function findObjectFromType(quantumPos: ObjectPosition, rawType: keyof typeof Pieces, side?: keyof typeof Sides): ObjectSet | undefined {
+export function findObjectFromType(quantumPos: ObjectPosition, side?: keyof typeof Sides, rawType: keyof typeof Pieces = Pieces.king): ObjectSet | undefined {
 	return getSide(quantumPos, side).find(objectSet => objectSet.pieceType.type_p === rawType);
 }
 
