@@ -2,6 +2,7 @@
 
 <html lang="en">
 	<head>
+		<link rel="icon" type="image/png" href="/favicon.ico?">
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Quantum Chess Editor</title>
@@ -24,7 +25,7 @@
 				border-width: 0.5vh;
 			}
 
-			#settings-button, #discord-button, .qubit-img, .button, .option {
+			#settings-button, #discord-button, #flip-button, .qubit-img, .button, .option {
 				cursor: pointer;
 			}
 
@@ -84,6 +85,13 @@
 
 			#discord-button {
 				right: 6vh;
+			}
+
+			#flip-button {
+				top: 45.5%;
+				right: -17.5%;
+				font-size: 6vh;
+				color: gray;
 			}
 
 			#settings-title {
@@ -306,6 +314,7 @@
 			<img class="qubit-img black" src="assets/images/qubit.png" onclick="toggleInfiniteQubits(window.visualSettings.perspective === 'white' ? 'black' : 'white')">
 			<text id="qubits-white" class="qubit-num white"></text>
 			<text id="qubits-black" class="qubit-num black"></text>
+			<i id="flip-button" class="fa-solid fa-rotate" onclick="flipBoard()"></i>
 			<svg id="coordinates-white" width="100%" height="100%" viewBox="0 0 100 100">
 				<text x="0.75" y="3.5"   font-size="2.8" class="coordinate dark" >8</text>
 				<text x="0.75" y="15.75" font-size="2.8" class="coordinate light">7</text>
@@ -346,22 +355,22 @@
 		<div id="settings">
 			<text id="settings-title">Settings</text>
 			<text class="section game">Game</text>
-			<text class="option-text no1"> Win by checkmate                        </text>
-			<text class="option-text no2"> Allow null plays                        </text>
-			<text class="option-text no3"> Allow castling                          </text>
-			<text class="option-text no4"> Allow castle splitting                  </text>
-			<text class="option-text no5"> Allow pawn double move splitting        </text>
-			<text class="option-text no6"> Measure partial piece captures          </text>
-			<text class="option-text no7"> Measure partial king captures           </text>
-			<text class="option-text no8"> Reward partial captures                 </text>
-			<text class="option-text no9"> Use advanced qubit formulas             </text>
+			<text class="option-text no1" >Win by checkmate                        </text>
+			<text class="option-text no2" >Allow null plays                        </text>
+			<text class="option-text no3" >Allow castling                          </text>
+			<text class="option-text no4" >Allow castle splitting                  </text>
+			<text class="option-text no5" >Allow pawn double move splitting        </text>
+			<text class="option-text no6" >Measure partial piece captures          </text>
+			<text class="option-text no7" >Measure partial king captures           </text>
+			<text class="option-text no8" >Reward partial captures                 </text>
+			<text class="option-text no9" >Use advanced qubit formulas             </text>
 			<text class="option-text no10">Use declaration 'captureOnly' externally</text>
 			<text class="option-text no11">Use declaration 'noCapture' externally  </text>
 			<text class="option-text no12">Use declaration 'checkOnly'             </text>
 			<text class="option-text no13">Use declaration 'noCheck'               </text>
 			<text class="option-text no14">Use declaration 'nonLeaping' externally </text>
-			<text class="option-text no15">Use true measurements                   </text>
-			<input type="checkbox" class="option no1"          onclick="window.gameSettings.winByCheckmate                      = !window.gameSettings.winByCheckmate                     ">
+			<text class="option-text no15">Use inner measurements                  </text>
+			<input type="checkbox" class="option no1"                                                                                                                                      >
 			<input type="checkbox" class="option no2"          onclick="window.gameSettings.nullPlays                           = !window.gameSettings.nullPlays                          ">
 			<input type="checkbox" class="option no3"  checked onclick="window.gameSettings.allowCastling                       = !window.gameSettings.allowCastling                      ">
 			<input type="checkbox" class="option no4"          onclick="window.gameSettings.castleSplitting                     = !window.gameSettings.castleSplitting                    ">
@@ -380,9 +389,9 @@
 			<text class="option-text no16">Show full rings  </text>
 			<text class="option-text no17">Fill ring centers</text>
 			<text class="option-text no18">Show coordinates </text>
-			<input type="checkbox" class="option no16" onclick="window.visualSettings.showFullRings   = !window.visualSettings.showFullRings  ; regeneratePosition()">
-			<input type="checkbox" class="option no17" onclick="window.visualSettings.fillRingCenters = !window.visualSettings.fillRingCenters; regeneratePosition()">
-			<input type="checkbox" class="option no18" onclick="window.visualSettings.showCoordinates = !window.visualSettings.showCoordinates; regeneratePosition()">
+			<input type="checkbox" class="option no16"         onclick="window.visualSettings.showFullRings   = !window.visualSettings.showFullRings  ; regeneratePosition()">
+			<input type="checkbox" class="option no17"         onclick="window.visualSettings.fillRingCenters = !window.visualSettings.fillRingCenters; regeneratePosition()">
+			<input type="checkbox" class="option no18" checked onclick="window.visualSettings.showCoordinates = !window.visualSettings.showCoordinates; regeneratePosition()">
 			<i class="fa fa-volume-up volume volume-icon"></i>
 			<input type="range" class="volume slider" min="0" max="100" value="100">
 		</div>
