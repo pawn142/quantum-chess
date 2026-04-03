@@ -213,6 +213,7 @@ export function setup(): void {
 	});
 	window.board.style.height = 200 / 3 + "%";
 	window.arrowpool.style["z-index"] = "1";
+	window.boardCover = [];
 	for (const coord of piece.chessboard) {
 		const squareDiv: HTMLDivElement = document.createElement("div");
 		window.board.append(squareDiv);
@@ -225,6 +226,7 @@ export function setup(): void {
 			"background-color": "transparent",
 			"z-index": "2",
 		});
+		window.boardCover.push(squareButton);
 		function handleClick(clickType: "left" | "right"): void {
 			function switchSelection(): void {
 				if (window.annotation && document.getElementById(window.annotation.index) && !piece.areOfDifferentObjects(window.position, window.annotation.coord, coord)) {
@@ -410,6 +412,7 @@ export function importPosition(skipConfirmation: boolean = false): void {
 	} else {
 		alert("Import failed: Invalid objects");
 	}
+	resetAction();
 }
 
 export function exportPosition(): void {
@@ -417,6 +420,10 @@ export function exportPosition(): void {
 }
 
 export function makePlay(): void {
+	if (!logic.isLegalPosition(window.position)) {
+		alert("Cannot make play in an illegal position");
+		return;
+	}
 	const filteredPlay: piece.Play = structuredClone(window.play);
 	filteredPlay.primaryMoves = filteredPlay.primaryMoves.filter(i => i);
 	filteredPlay.defaultMoves = filteredPlay.defaultMoves.filter(i => i);
@@ -440,7 +447,7 @@ export function makePlay(): void {
 	window.redo.plays.length = 0;
 }
 
-export function undoPlay(): void {
+export function undo(): void {
 	if (window.previous.positions.length) {
 		if (window.position.objects.length) {
 			window.redo.positions.push([piece.positionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
@@ -451,10 +458,11 @@ export function undoPlay(): void {
 		showPlay(window.previous.plays.at(-1));
 		window.previous.positions.pop();
 		window.previous.plays.pop();
+		resetAction();
 	}
 }
 
-export function redoPlay(): void {
+export function redo(): void {
 	if (window.redo.positions.length) {
 		window.previous.positions.push([piece.positionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
 		window.previous.plays.push(window.play);
@@ -464,10 +472,29 @@ export function redoPlay(): void {
 		showPlay(window.redo.plays.at(-1));
 		window.redo.positions.pop();
 		window.redo.plays.pop();
+		resetAction();
 	}
 }
 
 export function flipBoard(): void {
 	window.visualSettings.perspective = piece.otherSide(window.visualSettings.perspective);
 	regeneratePosition();
+}
+
+export function changeCursor(type: String): void {
+	document.documentElement.style.cursor = type;
+	for (const squareButton of window.boardCover) {
+		squareButton.style.cursor = type;
+	}
+}
+
+export function startAction(type: string): void {
+	window.action = type;
+	changeCursor(type);
+
+}
+
+export function resetAction(): void {
+	window.action = undefined;
+	changeCursor("default");
 }

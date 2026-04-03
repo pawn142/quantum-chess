@@ -125,6 +125,20 @@
 				font-family: monospace;
 			}
 
+			.button {
+				width: 14vh;
+				height: 5vh;
+				font-size: 1.8vh;
+			}
+
+			.import, .export, .clear-board, .reset, .move, .copy, .delete, .connect {
+				top: 6vh;
+			}
+
+			.play, .clear-play, .undo, .redo {
+				bottom: 6vh;
+			}
+
 			.import {
 				left: 2.5vh;
 			}
@@ -141,27 +155,20 @@
 				left: 50.5vh;
 			}
 
-			.play {
+			.move, .play {
 				right: 50.5vh;
 			}
 
-			.clear-play {
+			.copy, .clear-play {
 				right: 34.5vh;
 			}
 
-			.undo {
+			.delete, .undo {
 				right: 18.5vh;
 			}
 
-			.redo {
+			.connect, .redo {
 				right: 2.5vh;
-			}
-
-			.button {
-				top: 6vh;
-				width: 14vh;
-				height: 5vh;
-				font-size: 1.8vh;
 			}
 
 			.light {
@@ -299,12 +306,16 @@
 		<text id="turn-counter" onclick="changeSide()"></text>
 		<button class="import button"      onclick="importPosition()">Import Position</button>
 		<button class="export button"      onclick="exportPosition()">Export Position</button>
-		<button class="clear-board button" onclick="clearBoard()"    >Clear Board    </button>
-		<button class="reset button"       onclick="resetPosition()" >Reset Position </button>
-		<button class="play button"        onclick="makePlay()"      >Make Play      </button>
-		<button class="clear-play button"  onclick="clearPlay()"     >Clear Play     </button>
-		<button class="undo button"        onclick="undoPlay()"      >Undo Play      </button>
-		<button class="redo button"        onclick="redoPlay()"      >Redo Play      </button>
+		<button class="clear-board button" onclick="clearBoard()    ">Clear Board    </button>
+		<button class="reset button"       onclick="resetPosition() ">Reset Position </button>
+		<button class="play button"        onclick="makePlay()      ">Make Play      </button>
+		<button class="clear-play button"  onclick="clearPlay()     ">Clear Play     </button>
+		<button class="undo button"        onclick="undo()          ">Undo           </button>
+		<button class="redo button"        onclick="redo()          ">Redo           </button>
+		<button class="move button"        onclick="startAction('move')   ">Move Unit    </button>
+		<button class="copy button"        onclick="startAction('copy')   ">Copy Unit    </button>
+		<button class="delete button"      onclick="startAction('delete') ">Delete Unit  </button>
+		<button class="connect button"     onclick="startAction('connect')">Connect Units</button>
 		<textarea id="import-export"></textarea>
 		<i id="settings-button" class="fa fa-gear" onclick="window.settingsMenu.style.right = window.settingsMenu.style.right === '0px' ? '-50vh' : '0'"></i>
 		<i id="discord-button" class="fab fa-discord" onclick="window.open('https://discord.com/channels/1137778574909255741/1360046957975830588', '_blank')"></i>
