@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { defaultData } from "../backend/piecetypes.js";
 export const defaultVisuals = {
     perspective: defaultData.whoseTurn,
     showFullRings: false,
     fillRingCenters: false,
-    showCoordinates: false,
+    showCoordinates: true,
 };
 export const Sounds = {
     capture: "capture",
@@ -25,7 +26,7 @@ export function createCover(parent, elementType = "div") {
     return cover;
 }
 export function playSound(sound) {
-    sound.pause();
-    sound.currentTime = 0;
-    sound.play();
+    const copySound = sound.cloneNode();
+    copySound.volume = window.volumeSlider.value / 100;
+    copySound.play();
 }
