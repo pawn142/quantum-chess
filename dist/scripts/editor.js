@@ -281,7 +281,7 @@ export function setup() {
                                 positionCopy.objects.splice(positionCopy.objects.indexOf(targetObject), 1);
                             }
                             else {
-                                alert("Can't connect objects of different types");
+                                alert("Cannot connect objects of different types");
                                 success = false;
                             }
                             break;
