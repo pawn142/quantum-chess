@@ -283,7 +283,7 @@ export function setup() {
                                 alert("These units are already connected");
                                 success = false;
                             }
-                            else if (affectedObject.pieceType.type_p === targetObject.pieceType.type_p) {
+                            else if (JSON.stringify(affectedObject.pieceType) === JSON.stringify(targetObject.pieceType)) {
                                 scaleFactor = Fraction.min(Fraction.reciprocal(logic.totalProbability(affectedObject).add(logic.totalProbability(targetObject))), new Fraction);
                                 affectedObject.units.push(...targetObject.units);
                                 affectedObject.units.forEach(unit => unit.state.probability.multiply(scaleFactor));
