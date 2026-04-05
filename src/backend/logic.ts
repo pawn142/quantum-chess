@@ -353,7 +353,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 	if (!play.primaryMoves.length) {
 		return new Set(play.defaultMoves.length ? ["Cannot have only default moves"] : settings.nullPlays ? (settings.winByCheckmate && generatePossiblePositions(quantumPos).some(completedPos => isInCheck(completedPos)) ? ["You might be in check"] : []) : ["Null plays are not allowed in settings"]);
 	}
-	assert(playedObject && playedObject.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
+	assert(playedObject?.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
 	if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0])!)).isSubsetOf(allowedDeclarations(settings)))) {
 		problems.add("One or more external declarations are turned off in settings");
 	}
@@ -656,10 +656,10 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	if (promoted) {
 		playSound = Sounds.promote;
 	}
-	if (settings.winByCheckmate && isInCheck(objectsToFilledPosition(quantumPos))) {
+	if (settings.winByCheckmate && generatePossiblePositions(quantumPos, undefined, undefined, !settings.explosiveCheckmate).some(completedPos => isInCheck(completedPos))) {
 		playSound = Sounds.check;
 	}
-	return [newQuantumPos, playSound, (settings.winByCheckmate ? detectCheckmate(newQuantumPos, settings.explosiveCheckmate) : !findObjectFromType(newQuantumPos)) ? originalPos.otherData.whoseTurn : findObjectFromType(newQuantumPos, originalPos.otherData.whoseTurn) ? false : newQuantumPos.otherData.whoseTurn];
+	return [newQuantumPos, playSound, (settings.winByCheckmate ? detectCheckmate(newQuantumPos, settings.explosiveCheckmate, undefined, playSound !== Sounds.check) : !findObjectFromType(newQuantumPos)) ? originalPos.otherData.whoseTurn : findObjectFromType(newQuantumPos, originalPos.otherData.whoseTurn) ? false : newQuantumPos.otherData.whoseTurn];
 }
 
 export function candidateMoves(unit: PositionedPiece, quantumPos: ObjectPosition, side: keyof typeof Sides = quantumPos.objects.find(objectSet => objectSet.units.includes(unit))!.pieceType.side): DeclaredMove[] {
@@ -718,12 +718,12 @@ export function candidateMoves(unit: PositionedPiece, quantumPos: ObjectPosition
 	}));
 }
 
-export function detectCheckmate(quantumPos: ObjectPosition, explosiveCheckmate: boolean = defaultSettings.explosiveCheckmate, whoseTurn: keyof typeof Sides = quantumPos.otherData.whoseTurn): boolean {
-	if (generatePossiblePositions(quantumPos, undefined, undefined, !explosiveCheckmate).every(completedPos => !isInCheck(completedPos, whoseTurn))) {
+export function detectCheckmate(quantumPos: ObjectPosition, explosiveCheckmate: boolean = defaultSettings.explosiveCheckmate, whoseTurn: keyof typeof Sides = quantumPos.otherData.whoseTurn, notInCheck: boolean = generatePossiblePositions(quantumPos, undefined, undefined, !explosiveCheckmate).every(completedPos => !isInCheck(completedPos, whoseTurn))): boolean {
+	if (notInCheck) {
 		return false;
 	}
 	for (const objectSet of getSide(quantumPos)) {
-		if (objectSet.units.every(unit => candidateMoves(unit, quantumPos).some(candidateMove => isMoveAlwaysLegal(candidateMove, quantumPos, true)))) {
+		if (objectSet.units.every(unit => candidateMoves(unit, quantumPos).some(candidateMove => isMoveAlwaysLegal(candidateMove, quantumPos, true, quantumPos.objects.indexOf(objectSet), objectSet.units.indexOf(unit))))) {
 			return false;
 		}
 	};

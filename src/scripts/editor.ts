@@ -31,12 +31,13 @@ export function clearPlay(): void {
 }
 
 export function clearBoard(): void {
-	saveToPrevious();
-	window.position.objects = [];
-	window.objects = [];
-	clearBoardElements();
-	clearPlay();
-	resetAction();
+	if (window.position.objects.length) {
+		saveToPrevious();
+		window.position.objects = [];
+		clearBoardElements();
+		clearPlay();
+		resetAction();
+	}
 }
 
 export function removeAnnotation(): void {
@@ -221,10 +222,10 @@ export function setup(): void {
 		});
 		function handleClick(clickType: "left" | "right"): void {
 			function switchSelection(): void {
-				if (window.annotation && document.getElementById(window.annotation.index) && !piece.areOfDifferentObjects(window.position, window.annotation.coord, coord)) {
+				if (document.getElementById(window.annotation?.index) && !piece.areOfDifferentObjects(window.position, window.annotation.coord, coord)) {
 					removeAnnotation();
 				}
-				if (window.play.objectIndex && !window.position.objects[window.play.objectIndex].units.includes(piece.findUnit(piece.getSide(window.position), coord))) {
+				if (!window.position.objects[window.play.objectIndex]?.units.includes(piece.findUnit(piece.getSide(window.position), coord))) {
 					clearPlay();
 				}
 				removeSelection();
@@ -287,7 +288,10 @@ export function setup(): void {
 							});
 							break;
 						case "crosshair":
-							if (affectedObject.pieceType.type_p === targetObject.pieceType.type_p) {
+							if (affectedObject === targetObject) {
+								alert("These units are already connected");
+								success = false;
+							} else if (affectedObject.pieceType.type_p === targetObject.pieceType.type_p) {
 								scaleFactor = Fraction.min(Fraction.reciprocal(logic.totalProbability(affectedObject).add(logic.totalProbability(targetObject))), new Fraction);
 								affectedObject.units.push(...targetObject.units);
 								affectedObject.units.forEach(unit => unit.state.probability.multiply(scaleFactor));
