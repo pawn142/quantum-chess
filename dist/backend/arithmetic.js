@@ -79,11 +79,11 @@ export default class Fraction {
     static negative(fraction) {
         return new Fraction(-fraction.numerator, fraction.denominator);
     }
-    static difference(fractionOne, fractionTwo) {
-        return Fraction.sum(fractionOne, Fraction.negative(fractionTwo));
+    static difference(fracOne, fracTwo) {
+        return Fraction.sum(fracOne, Fraction.negative(fracTwo));
     }
-    static quotient(fractionOne, fractionTwo) {
-        return Fraction.product(fractionOne, Fraction.reciprocal(fractionTwo));
+    static quotient(fracOne, fracTwo) {
+        return Fraction.product(fracOne, Fraction.reciprocal(fracTwo));
     }
     subtract(other) {
         return this.add(Fraction.negative(other));
@@ -119,5 +119,8 @@ export default class Fraction {
         else {
             return obj;
         }
+    }
+    static min(fracOne, fracTwo) {
+        return fracOne.lessThan(fracTwo) ? fracOne : fracTwo;
     }
 }

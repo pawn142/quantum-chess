@@ -24,18 +24,13 @@ export function clearPlay() {
     };
     removeSelection();
 }
-export function clearUndoTree() {
-    window.previous.positions.length = 0;
-    window.previous.plays.length = 0;
-    window.redo.positions.length = 0;
-    window.redo.plays.length = 0;
-}
 export function clearBoard() {
+    saveToPrevious();
     window.position.objects = [];
     window.objects = [];
     clearBoardElements();
     clearPlay();
-    clearUndoTree();
+    resetAction();
 }
 export function removeAnnotation() {
     if (window.annotation) {
@@ -165,7 +160,7 @@ export function resetPosition() {
     window.gameOver = false;
     showPosition(logic.initializeObjectPosition(window.gameSettings.unlimitedQubits));
     clearPlay();
-    clearUndoTree();
+    resetAction();
 }
 export function regeneratePosition() {
     showPosition(window.position);
@@ -226,6 +221,91 @@ export function setup() {
                 window.selection = squareDiv;
                 window.play.objectIndex = window.position.objects.indexOf(piece.findObject(window.position, coord));
             }
+            function switchAnnotation() {
+                if (window.selection !== squareDiv) {
+                    removeAnnotation();
+                    window.annotation = squareDiv;
+                    squareDiv.style["background-color"] = "purple";
+                }
+            }
+            if (window.action) {
+                const target = !!piece.findObject(window.position, coord);
+                if (!window.annotation && !(window.action === "not-allowed" && target)) {
+                    target ? switchAnnotation() : (resetAction(), handleClick(clickType));
+                    return;
+                }
+                if (window.annotation === squareDiv || window.action === "crosshair" && !target) {
+                    removeAnnotation(), resetAction();
+                    return;
+                }
+                const positionCopy = piece.positionalClone(window.position);
+                const targetObject = piece.findObject(positionCopy, coord);
+                function removeCoord() {
+                    targetObject.units.splice(targetObject.units.findIndex(unit => piece.areCoordsEqual(unit.state, coord)), 1);
+                    logic.cleanEntanglements(targetObject.units);
+                    if (!targetObject.units.length) {
+                        positionCopy.objects.splice(positionCopy.objects.indexOf(targetObject), 1);
+                    }
+                }
+                let success = true;
+                if (window.action === "not-allowed") {
+                    removeCoord();
+                }
+                else {
+                    const affectedObject = piece.findObject(positionCopy, window.annotation.coord);
+                    if (targetObject && ["move", "copy"].includes(window.action)) {
+                        removeCoord();
+                    }
+                    let scaleFactor;
+                    switch (window.action) {
+                        case "move":
+                            Object.assign(piece.findUnit(positionCopy.objects, window.annotation.coord).state, coord);
+                            break;
+                        case "copy":
+                            positionCopy.objects.push({
+                                pieceType: affectedObject.pieceType,
+                                units: [{
+                                        state: {
+                                            ...Fraction.fractionalClone(piece.findUnit(positionCopy.objects, window.annotation.coord)).state,
+                                            ...coord,
+                                        },
+                                        entangledTo: [],
+                                    }]
+                            });
+                            break;
+                        case "crosshair":
+                            if (affectedObject.pieceType.type_p === targetObject.pieceType.type_p) {
+                                scaleFactor = Fraction.min(Fraction.reciprocal(logic.totalProbability(affectedObject).add(logic.totalProbability(targetObject))), new Fraction);
+                                affectedObject.units.push(...targetObject.units);
+                                affectedObject.units.forEach(unit => unit.state.probability.multiply(scaleFactor));
+                                positionCopy.objects.splice(positionCopy.objects.indexOf(targetObject), 1);
+                            }
+                            else {
+                                alert("Can't connect objects of different types");
+                                success = false;
+                            }
+                            break;
+                    }
+                }
+                if (success && logic.areValidObjects(positionCopy)) {
+                    logic.updateCastling(positionCopy);
+                    if (!logic.checkEnpassant(positionCopy)) {
+                        positionCopy.otherData.enpassant = false;
+                    }
+                    saveToPrevious();
+                    showPosition(positionCopy);
+                    if (clickType === "left") {
+                        removeAnnotation();
+                        resetAction();
+                    }
+                    if (window.action === "move") {
+                        removeAnnotation();
+                    }
+                    checkLag();
+                    resetWinByMate();
+                }
+                return;
+            }
             if (!window.selection) {
                 if (clickType === "left") {
                     if (piece.findUnit(piece.getSide(window.position), coord)) {
@@ -244,26 +324,17 @@ export function setup() {
                                 previousArrow.remove();
                                 delete window.play.primaryMoves[previousArrow.index];
                             }
-                            else {
-                                if (createArrow(window.selection.coord, coord, "primary", true)) {
-                                    window.play.primaryMoves.push(matchingMove);
-                                }
-                            }
-                        }
-                        else {
-                            if (clickType === "right") {
-                                previousArrow.remove();
-                                delete window.play.defaultMoves[previousArrow.index];
-                            }
-                        }
-                    }
-                    else {
-                        if (clickType === "left") {
-                            if (createArrow(window.selection.coord, coord, "primary", true)) {
+                            else if (createArrow(window.selection.coord, coord, "primary", true)) {
                                 window.play.primaryMoves.push(matchingMove);
                             }
                         }
-                        else {
+                        else if (clickType === "right") {
+                            previousArrow.remove();
+                            delete window.play.defaultMoves[previousArrow.index];
+                        }
+                    }
+                    else {
+                        if (clickType === "right") {
                             const replacedDefault = document.querySelector(`[id^="${'d' + window.selection.coord.x + window.selection.coord.y}"]`);
                             if (replacedDefault) {
                                 replacedDefault.remove();
@@ -273,34 +344,20 @@ export function setup() {
                                 window.play.defaultMoves.push(matchingMove);
                             }
                         }
+                        else if (createArrow(window.selection.coord, coord, "primary", true)) {
+                            window.play.primaryMoves.push(matchingMove);
+                        }
                     }
                     return;
                 }
-                else {
-                    if (clickType === "left") {
-                        if (piece.findUnit(piece.getSide(window.position), coord)) {
-                            if (piece.areCoordsEqual(window.selection.coord, coord)) {
-                                removeSelection();
-                            }
-                            else {
-                                switchSelection();
-                            }
-                        }
-                        return;
+                else if (clickType === "left") {
+                    if (piece.findUnit(piece.getSide(window.position), coord)) {
+                        piece.areCoordsEqual(window.selection.coord, coord) ? removeSelection() : switchSelection();
                     }
+                    return;
                 }
             }
-            if (window.selection !== squareDiv) {
-                if (window.annotation === squareDiv) {
-                    removeAnnotation();
-                }
-                else {
-                    removeAnnotation();
-                    window.annotation = squareDiv;
-                    squareDiv.style["background-color"] = "purple";
-                }
-            }
-            return;
+            window.annotation === squareDiv ? removeAnnotation() : switchAnnotation();
         }
         ;
         squareButton.onclick = function () {
@@ -336,10 +393,11 @@ export function attemptChange(msgType = false) {
     else {
         let message;
         if (logic.isLegalPosition(window.position)) {
-            if (logic.generatePossiblePositions(window.position).some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, piece.otherSide(window.position.otherData.whoseTurn)) || logic.isInCheck(completedPos, piece.otherSide(window.position.otherData.whoseTurn)))) {
+            const possiblePositions = logic.generatePossiblePositions(window.position);
+            if (possiblePositions.some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, piece.otherSide(window.position.otherData.whoseTurn)) || logic.isInCheck(completedPos, piece.otherSide(window.position.otherData.whoseTurn)))) {
                 message = "The inactive player's king is already endangered";
             }
-            else if (logic.generatePossiblePositions(window.position).some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, window.position.otherData.whoseTurn) || logic.detectCheckmate(piece.completedPositionToObjects(completedPos)))) {
+            else if (possiblePositions.some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, window.position.otherData.whoseTurn) || logic.detectCheckmate(piece.completedPositionToObjects(completedPos)))) {
                 message = "The active player may already be in checkmate";
             }
         }
@@ -349,6 +407,7 @@ export function attemptChange(msgType = false) {
         }
         else {
             window.gameSettings.winByCheckmate = true;
+            window.checkmateSetting.checked = true;
         }
     }
 }
@@ -364,6 +423,7 @@ export function resetWinByMate(value = logic.isLegalPosition(window.position)) {
 }
 export function changeSide() {
     if (!window.gameOver) {
+        saveToPrevious();
         clearPlay();
         window.position.otherData.whoseTurn = piece.otherSide(window.position.otherData.whoseTurn);
         window.position.otherData.enpassant = false;
@@ -395,58 +455,71 @@ export function toggleInfiniteQubits(side) {
         }
     }
 }
-export function importPosition(skipConfirmation = false) {
-    if (logic.isValidObjectsString(window.import_export.value)) {
-        if (skipConfirmation || logic.isLegalPositionString(window.import_export.value) || confirm("Import illegal position?")) {
-            showPosition(logic.getObjectsFromString(window.import_export.value));
-            clearPlay();
-            resetWinByMate(true);
+export function importPosition(value = window.import_export.value, skipConfirmation = false) {
+    if (logic.getObjectsString(window.position) !== value) {
+        if (skipConfirmation || logic.isValidObjectsString(value)) {
+            if (skipConfirmation || logic.isLegalPositionString(value) || confirm("Import illegal position?")) {
+                window.gameOver = false;
+                saveToPrevious();
+                showPosition(logic.getObjectsFromString(value));
+                clearPlay();
+                checkLag();
+                resetWinByMate(true);
+            }
+        }
+        else {
+            alert("Import failed: Invalid objects");
         }
     }
-    else {
-        alert("Import failed: Invalid objects");
-    }
+    resetAction();
 }
 export function exportPosition() {
     window.import_export.value = logic.getObjectsString(window.position);
 }
 export function makePlay() {
+    if (!logic.isLegalPosition(window.position)) {
+        alert("Cannot make play in an illegal position");
+        return;
+    }
     const filteredPlay = structuredClone(window.play);
     filteredPlay.primaryMoves = filteredPlay.primaryMoves.filter(i => i);
     filteredPlay.defaultMoves = filteredPlay.defaultMoves.filter(i => i);
     if (!logic.isPlayLegal(filteredPlay, window.position, window.gameSettings)) {
         alert("Play failed: " + [...logic.checkPlayValidity(filteredPlay, window.position, window.gameSettings)][0]);
-        return;
     }
-    window.play.primaryMoves = filteredPlay.primaryMoves;
-    window.play.defaultMoves = filteredPlay.defaultMoves;
-    const previousPosition = [];
-    previousPosition.push(piece.positionalClone(window.position));
-    const playResults = logic.generatePlayResults(window.play, window.position, window.gameSettings);
-    previousPosition.push(playResults[1], playResults[2]);
-    window.previous.positions.push(previousPosition);
-    window.previous.plays.push(window.play);
-    tools.playSound(window.sounds[playResults[1]]);
-    window.gameOver = playResults[2];
-    showPosition(playResults[0]);
-    clearPlay();
-    window.redo.positions.length = 0;
-    window.redo.plays.length = 0;
+    else {
+        window.play.primaryMoves = filteredPlay.primaryMoves;
+        window.play.defaultMoves = filteredPlay.defaultMoves;
+        const previousPosition = [];
+        previousPosition.push(piece.positionalClone(window.position));
+        const playResults = logic.generatePlayResults(window.play, window.position, window.gameSettings);
+        previousPosition.push(playResults[1], playResults[2]);
+        window.previous.positions.push(previousPosition);
+        window.previous.plays.push(window.play);
+        tools.playSound(window.sounds[playResults[1]]);
+        window.gameOver = playResults[2];
+        showPosition(playResults[0]);
+        clearPlay();
+        window.redo.positions.length = 0;
+        window.redo.plays.length = 0;
+        resetAction();
+        checkLag();
+    }
 }
-export function undoPlay() {
+export function ctrlZ() {
     if (window.previous.positions.length) {
-        if (window.position.objects.length) {
-            window.redo.positions.push([piece.positionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
-            window.redo.plays.push(window.play);
-        }
-        window.gameOver = false;
+        window.redo.positions.push([piece.positionalClone(window.position), ...window.previous.positions.at(-1).slice(1)]);
+        window.redo.plays.push(window.play);
+        window.gameOver = window.previous.positions.at(-2) && window.previous.positions.at(-2)[2];
         showPosition(window.previous.positions.at(-1)[0]);
         showPlay(window.previous.plays.at(-1));
         window.previous.positions.pop();
         window.previous.plays.pop();
+        resetAction();
+        resetWinByMate(!window.gameOver);
     }
 }
-export function redoPlay() {
+export function ctrlY() {
     if (window.redo.positions.length) {
         window.previous.positions.push([piece.positionalClone(window.position), ...window.redo.positions.at(-1).slice(1)]);
         window.previous.plays.push(window.play);
@@ -456,9 +529,49 @@ export function redoPlay() {
         showPlay(window.redo.plays.at(-1));
         window.redo.positions.pop();
         window.redo.plays.pop();
+        resetAction();
+        resetWinByMate(!window.gameOver);
     }
+}
+export function saveToPrevious() {
+    window.previous.positions.push([piece.positionalClone(window.position), null, false]);
+    window.previous.plays.push(window.pendingPlay && window.play.primaryMoves.length + window.play.defaultMoves.length === 0 ? window.pendingPlay : structuredClone(window.play));
+    window.redo.positions.length = 0;
+    window.redo.plays.length = 0;
+    window.pendingPlay = undefined;
 }
 export function flipBoard() {
     window.visualSettings.perspective = piece.otherSide(window.visualSettings.perspective);
     regeneratePosition();
+}
+export function changeCursor(type) {
+    document.documentElement.style.cursor = type;
+    for (let i = 0; i < 64; ++i) {
+        window["button" + i].style.cursor = type;
+    }
+}
+export function startAction(type) {
+    window.action = type;
+    changeCursor(type);
+    window.pendingPlay = window.play;
+    clearPlay();
+    removeSelection();
+    if (window.annotation && !document.getElementById(window.annotation.index)) {
+        removeAnnotation();
+    }
+    if (window.annotation) {
+        const button = window["button" + window.annotation.index];
+        removeAnnotation();
+        button.click();
+    }
+}
+export function resetAction() {
+    window.action = undefined;
+    changeCursor("default");
+}
+export function checkLag() {
+    if (!window.warned && logic.countPositions(window.position) > 10000) {
+        alert("Some functions may lag substantially when the number of possible positions exceeds 10,000");
+        window.warned = true;
+    }
 }

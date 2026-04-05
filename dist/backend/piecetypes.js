@@ -167,23 +167,23 @@ export function getRespectiveQubitAmount(data) {
 export function findUnit(objects, coord) {
     return objects.flatMap(objectSet => objectSet.units).find(unit => areCoordsEqual(unit.state, coord));
 }
-export function findObject(quantumPos, coord) {
-    return quantumPos.objects.find(objectSet => objectSet.units.some(unit => areCoordsEqual(unit.state, coord)));
+export function findObject(objectPosition, coord) {
+    return objectPosition.objects.find(objectSet => objectSet.units.some(unit => areCoordsEqual(unit.state, coord)));
 }
-export function getCoordType(quantumPos, coord) {
-    return findUnit(quantumPos.objects, coord)?.state.promotion ?? findObject(quantumPos, coord)?.pieceType.type_p;
+export function getCoordType(objectPosition, coord) {
+    return findUnit(objectPosition.objects, coord)?.state.promotion ?? findObject(objectPosition, coord)?.pieceType.type_p;
 }
-export function getUnitType(quantumPos, unit) {
-    return unit.state.promotion ?? quantumPos.objects.find(objectSet => objectSet.units.includes(unit)).pieceType.type_p;
+export function getUnitType(objectPosition, unit) {
+    return unit.state.promotion ?? objectPosition.objects.find(objectSet => objectSet.units.includes(unit)).pieceType.type_p;
 }
-export function getSide(quantumPos, side = quantumPos.otherData.whoseTurn) {
-    return quantumPos.objects.filter(objectSet => objectSet.pieceType.side === side);
+export function getSide(objectPosition, side = objectPosition.otherData.whoseTurn) {
+    return objectPosition.objects.filter(objectSet => objectSet.pieceType.side === side);
 }
-export function findObjectFromType(quantumPos, side, rawType = Pieces.king) {
-    return getSide(quantumPos, side).find(objectSet => objectSet.pieceType.type_p === rawType);
+export function findObjectFromType(objectPosition, side, rawType = Pieces.king) {
+    return getSide(objectPosition, side).find(objectSet => objectSet.pieceType.type_p === rawType);
 }
-export function areOfDifferentObjects(quantumPos, coordOne, coordTwo) {
-    return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObject(quantumPos, coordOne), findObject(quantumPos, coordTwo));
+export function areOfDifferentObjects(objectPosition, coordOne, coordTwo) {
+    return ((objectOne, objectTwo) => !!objectOne && !!objectTwo && objectOne !== objectTwo)(findObject(objectPosition, coordOne), findObject(objectPosition, coordTwo));
 }
 export function findPiece(completedPos, coord) {
     return completedPos.pieces.find(completedPiece => areCoordsEqual(completedPiece.state, coord));
@@ -231,7 +231,7 @@ export const defaultPosition = {
 export function completedPositionToObjects(completedPos) {
     return {
         objects: completedPos.pieces.map(completedPiece => ({
-            pieceType: structuredClone(completedPiece.pieceType),
+            pieceType: { ...completedPiece.pieceType },
             units: [{
                     state: addProbability(completedPiece.state),
                     entangledTo: [],
@@ -243,7 +243,7 @@ export function completedPositionToObjects(completedPos) {
 export function objectsToFilledPosition(quantumPos) {
     return {
         pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.map(unit => ({
-            pieceType: structuredClone(objectSet.pieceType),
+            pieceType: { ...objectSet.pieceType },
             state: discardProbability(unit.state),
         }))),
         otherData: structuredClone(quantumPos.otherData),
@@ -257,7 +257,7 @@ export function positionalClone(quantumPos) {
 export function objectsToSparsePosition(quantumPos) {
     return {
         pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.filter(unit => unit.state.probability.equalTo(new Fraction)).map(unit => ({
-            pieceType: structuredClone(objectSet.pieceType),
+            pieceType: { ...objectSet.pieceType },
             state: discardProbability(unit.state),
         }))),
         otherData: structuredClone(quantumPos.otherData),

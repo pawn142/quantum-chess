@@ -26,7 +26,9 @@ export function createCover(parent, elementType = "div") {
     return cover;
 }
 export function playSound(sound) {
-    const copySound = sound.cloneNode();
-    copySound.volume = window.volumeSlider.value / 100;
-    copySound.play();
+    if (sound) {
+        const copySound = sound.cloneNode();
+        copySound.volume = window.volumeSlider.value / 100;
+        copySound.play();
+    }
 }
