@@ -159,7 +159,11 @@ export function showPosition(objectPosition) {
 }
 export function resetPosition() {
     window.gameOver = false;
-    showPosition(logic.initializeObjectPosition(window.gameSettings.unlimitedQubits));
+    const initialPos = logic.initializeObjectPosition(window.gameSettings.unlimitedQubits);
+    if (JSON.stringify(initialPos) !== JSON.stringify(window.position)) {
+        saveToPrevious();
+        showPosition(initialPos);
+    }
     clearPlay();
     resetAction();
 }
@@ -211,7 +215,7 @@ export function setup() {
                 if (document.getElementById(window.annotation?.index) && !piece.areOfDifferentObjects(window.position, window.annotation.coord, coord)) {
                     removeAnnotation();
                 }
-                if (!window.position.objects[window.play.objectIndex]?.units.includes(piece.findUnit(piece.getSide(window.position), coord))) {
+                if (!window.position.objects[window.play?.objectIndex]?.units.includes(piece.findUnit(piece.getSide(window.position), coord))) {
                     clearPlay();
                 }
                 removeSelection();
@@ -384,7 +388,7 @@ export function setup() {
         positions: [],
         plays: [],
     };
-    resetPosition();
+    showPosition(logic.initializeObjectPosition(meta.defaultSettings.unlimitedQubits));
     window.checkmateSetting.addEventListener("click", (event) => {
         if (attemptChange(true)) {
             event.preventDefault();
