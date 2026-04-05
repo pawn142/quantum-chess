@@ -447,7 +447,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 	});
 	filledPos.pieces.push({
 		pieceType: playedObject.pieceType,
-		state: findUnit([playedObject], significantSquares[0])!.state,
+		state: { ...findUnit([playedObject], significantSquares[0])!.state },
 	});
 	if (declaredMove.declarations.has(MoveDeclarations.captureOnly) || declaredMove.declarations.has(MoveDeclarations.noCapture) && findPiece(filledPos, getCapturedSquare(declaredMove.move)) || isEndpointBlocked(declaredMove.move, filledPos)) {
 		currentDependencies.push(getCapturedSquare(declaredMove.move));
