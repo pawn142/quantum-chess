@@ -392,7 +392,7 @@ export function attemptChange(msgType = false) {
     }
     else {
         let message;
-        if (logic.isLegalPosition(window.position)) {
+        if (!window.gameOver && logic.isLegalPosition(window.position)) {
             const possiblePositions = logic.generatePossiblePositions(window.position);
             if (possiblePositions.some(completedPos => !piece.findPieceFromType(completedPos, piece.Pieces.king, piece.otherSide(window.position.otherData.whoseTurn)) || logic.isInCheck(completedPos, piece.otherSide(window.position.otherData.whoseTurn)))) {
                 message = "The inactive player's king is already endangered";
@@ -516,7 +516,7 @@ export function ctrlZ() {
         window.previous.positions.pop();
         window.previous.plays.pop();
         resetAction();
-        resetWinByMate(!window.gameOver);
+        resetWinByMate();
     }
 }
 export function ctrlY() {
@@ -530,7 +530,7 @@ export function ctrlY() {
         window.redo.positions.pop();
         window.redo.plays.pop();
         resetAction();
-        resetWinByMate(!window.gameOver);
+        resetWinByMate();
     }
 }
 export function saveToPrevious() {
