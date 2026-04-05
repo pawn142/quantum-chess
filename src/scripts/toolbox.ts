@@ -38,8 +38,10 @@ export function createCover(parent: HTMLElement, elementType: string = "div"): H
 	return cover;
 }
 
-export function playSound(sound: HTMLAudioElement): void {
-	const copySound: HTMLAudioElement = sound.cloneNode() as HTMLAudioElement;
-	copySound.volume = window.volumeSlider.value / 100;
-	copySound.play();
+export function playSound(sound: HTMLAudioElement | null): void {
+	if (sound) {
+		const copySound: HTMLAudioElement = sound.cloneNode() as HTMLAudioElement;
+		copySound.volume = window.volumeSlider.value / 100;
+		copySound.play();
+	}
 }

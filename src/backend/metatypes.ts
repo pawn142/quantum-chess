@@ -1,7 +1,7 @@
 import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
 
-import { addProbability, allDeclarations, areCoordsEqual, chessboard, defaultData, enpassantDisplacement, getSide, isCoord, translateCoord, validPromotions, ChessboardPosition, Coord, GameData, MoveDeclarations, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
+import { addProbability, allDeclarations, chessboard, defaultData, getSide, Coord, GameData, MoveDeclarations, PositionedPiece, ObjectPosition, PartialCoord, Pieces, Sides, WeightedCoord } from "./piecetypes.js";
 
 export function filteredEntries(obj: object): [string, any][] {
 	return Object.entries(obj).filter((entry: [string, any]) => entry[1] !== undefined);
@@ -305,47 +305,9 @@ export function getCastleValues(gamePosition: GamePosition): [boolean, boolean, 
 	];
 }
 
-export function validStartingPositionCheck(gamePosition: GamePosition): boolean {
-	try {
-		new ChessboardPosition(gamePositionToObjects(gamePosition).objects);
-	} catch {
-		return false;
-	}
-	const properKeys: string[] = ["", ...Object.keys(defaultGamePosition.whitePosition)] as const;
-	const candidateKeys: string[] = ["", ...Object.keys(gamePosition.whitePosition), "", ...Object.keys(gamePosition.blackPosition)] as const;
-	return gamePosition.otherData.qubits.whiteBalance >= 0 && gamePosition.otherData.qubits.blackBalance >= 0 &&
-	       candidateKeys.every((key, keyIndex) => !key || properKeys.indexOf(key) > properKeys.indexOf(candidateKeys[keyIndex - 1]!)) &&
-	       candidateKeys.indexOf("k1") !== candidateKeys.lastIndexOf("k1") &&
-	       [...filteredEntries(gamePosition.whitePosition), ...filteredEntries(gamePosition.blackPosition)].every((pieceEntry: [string, PieceSet]) => pieceEntry[1].states.reduce((accumulator, current) => ({
-		       x: 1,
-		       y: 1,
-		       probability: Fraction.sum(accumulator.probability, current.probability),
-	       })).probability.lessThanOrEqualTo(new Fraction) && pieceEntry[1].states.every(pieceCoord => pieceCoord.probability.numerator > 0 && pieceCoord.probability.denominator > 0) && (pieceEntry[0][0] !== "p" || pieceEntry[1].states.every(pieceCoord => (![1, 8].includes(pieceCoord.y) || pieceCoord.promotion) && validPromotions.has(pieceCoord.promotion))) && (pieceEntry[0][0] === "p" || pieceEntry[1].states.every(pieceCoord => pieceCoord.promotion === undefined))) &&
-	       (!gamePosition.otherData.enpassant || isCoord(gamePosition.otherData.enpassant) && [3, 6].includes(gamePosition.otherData.enpassant.y) && (gamePosition.otherData.whoseTurn === Sides.white ? filteredEntries(gamePosition.blackPosition) : filteredEntries(gamePosition.whitePosition)).some((pieceEntry: [string, PieceSet]) => pieceEntry[0][0] === "p" && pieceEntry[1].states.some(pieceCoord => !pieceCoord.promotion && areCoordsEqual(translateCoord(pieceCoord, 0, enpassantDisplacement(gamePosition.otherData.whoseTurn), true), gamePosition.otherData.enpassant as Coord)))) &&
-	       (!gamePosition.otherData.castling.canWhiteCastleLeft  || getCastleValues(gamePosition)[0]) &&
-	       (!gamePosition.otherData.castling.canWhiteCastleRight || getCastleValues(gamePosition)[1]) &&
-	       (!gamePosition.otherData.castling.canBlackCastleLeft  || getCastleValues(gamePosition)[2]) &&
-	       (!gamePosition.otherData.castling.canBlackCastleRight || getCastleValues(gamePosition)[3]);
-}
-
-export function isValidPositionString(candidateString: string): boolean {
-	try {
-		return validStartingPositionCheck(getPositionFromString(candidateString)) && getPositionString(getPositionFromString(candidateString)) === candidateString;
-	} catch {
-		return false;
-	}
-}
-
-export function isValidStartingPosition(candidatePosition: GamePosition): boolean {
-	try {
-		return isValidPositionString(getPositionString(candidatePosition));
-	} catch {
-		return false;
-	}
-}
-
 export interface GameSettings {
 	winByCheckmate: boolean;
+	explosiveCheckmate: true;
 	nullPlays: boolean;
 	allowCastling: boolean;
 	castleSplitting: boolean;
@@ -367,6 +329,7 @@ export interface GameSettings {
 
 export const defaultSettings: GameSettings = {
 	winByCheckmate: false,
+	explosiveCheckmate: true,
 	nullPlays: false,
 	allowCastling: true,
 	castleSplitting: false,

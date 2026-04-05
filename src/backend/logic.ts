@@ -275,7 +275,7 @@ export function isMoveLegal(declaredMove: DeclaredMove, completedPos: CompletedP
 	return current;
 }
 
-export function generatePossiblePositions(quantumPos: ObjectPosition, fixedObjectIndex?: number, fixedUnitIndex?: number): CompletedPosition[] {
+export function generatePossiblePositions(quantumPos: ObjectPosition, fixedObjectIndex?: number, fixedUnitIndex?: number, endEarly: boolean = false): CompletedPosition[] {
 	const completedPositions: CompletedPosition[] = [];
 	const currentIndexes: number[] = Array(quantumPos.objects.length).fill(0);
 	const limitIndexes: number[] = quantumPos.objects.map(objectSet => objectSet.units.length + (Fraction.sum(...objectSet.units.map(unit => unit.state.probability)).lessThan(new Fraction) ? 1 : 0));
@@ -283,13 +283,27 @@ export function generatePossiblePositions(quantumPos: ObjectPosition, fixedObjec
 		currentIndexes[fixedObjectIndex] = fixedUnitIndex;
 	}
 	let pointer: number = 0;
-	while (pointer >= 0) {
-		completedPositions.push({
+	if (endEarly) {
+		return [({
 			pieces: quantumPos.objects.flatMap((objectSet, objectIndex) => objectSet.units[currentIndexes[objectIndex]!] ? [({
-				pieceType: structuredClone(objectSet.pieceType),
+				pieceType: { ...objectSet.pieceType },
 				state: discardProbability(objectSet.units[currentIndexes[objectIndex]!]!.state),
 			})] : []),
 			otherData: structuredClone(quantumPos.otherData),
+		})];
+	}
+	while (pointer >= 0) {
+		completedPositions.push({
+			pieces: quantumPos.objects.flatMap((objectSet, objectIndex) => objectSet.units[currentIndexes[objectIndex]!] ? [({
+				pieceType: { ...objectSet.pieceType },
+				state: discardProbability(objectSet.units[currentIndexes[objectIndex]!]!.state),
+			})] : []),
+			otherData: {
+				whoseTurn: quantumPos.otherData.whoseTurn,
+				castling: { ...quantumPos.otherData.castling },
+				enpassant: quantumPos.otherData.enpassant,
+				qubits: { ...quantumPos.otherData.qubits },
+			},
 		});
 		pointer = currentIndexes.length - 1;
 		while (pointer >= 0 && (pointer === fixedObjectIndex || ++currentIndexes[pointer]! === limitIndexes[pointer])) {
@@ -494,11 +508,14 @@ export function makeMeasurement(quantumPos: ObjectPosition, dependency: Coord, m
 				dependentObject.units.splice(1);
 				dependentObject.units[0]!.state.probability = new Fraction;
 			} else {
-				newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(dependentObject), 1);
+				dependentObject.units = [];
 			}
 		}
 	}
 	cleanEntanglements(dependentObject.units);
+	if (dependentObject.units.length === 0) {
+		newQuantumPos.objects.splice(newQuantumPos.objects.indexOf(dependentObject), 1);
+	}
 	return [newQuantumPos, dependentObject.units.some(unit => areCoordsEqual(unit.state, dependency))];
 }
 
@@ -510,7 +527,15 @@ export function generateMoveResults(declaredMove: DeclaredMove, quantumPos: Obje
 	while ((possiblePositions => possiblePositions.some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate)) && possiblePositions.some(completedPos => !isMoveLegal(declaredMove, completedPos, winByCheckmate)))(generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex))) {
 		makeMeasurement(newQuantumPos, generateRandomDependency(declaredMove, newQuantumPos, winByCheckmate), measurementType);
 	}
-	return [newQuantumPos, isMoveLegal(declaredMove, generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex)[0]!, winByCheckmate)];
+	return [newQuantumPos, isMoveLegal(declaredMove, generatePossiblePositions(newQuantumPos, newQuantumPos.objects.indexOf(playedObject), unitIndex, true)[0]!, winByCheckmate)];
+}
+
+export function updateCastling(quantumPos: ObjectPosition): void {
+	const castleValues: [boolean, boolean, boolean, boolean] = getCastleValues(objectsToGamePosition(quantumPos));
+	quantumPos.otherData.castling.canWhiteCastleLeft  &&= castleValues[0];
+	quantumPos.otherData.castling.canWhiteCastleRight &&= castleValues[1];
+	quantumPos.otherData.castling.canBlackCastleLeft  &&= castleValues[2];
+	quantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
 }
 
 export function generatePlayResults(play: Play, quantumPos: ObjectPosition, settings: GameSettings = defaultSettings, makeCopy: boolean = false): [ObjectPosition, keyof typeof Sounds, keyof typeof Sides | false] {
@@ -573,7 +598,7 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 		}
 		if (localPrimaries.length) {
 			unit.state.probability = defaultBuildup;
-			if (unit.state.probability.numerator === 0) {
+			if (defaultBuildup.numerator === 0) {
 				playedObject.units.splice(playedObject.units.indexOf(unit), 1);
 			}
 		}
@@ -591,9 +616,9 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	for (const captureDependency of captureDependencies) {
 		if (findObject(newQuantumPos, captureDependency[0]) && (!measurePartiallyCaptured(findObject(quantumPos, captureDependency[1])!.pieceType.type_p) || makeMeasurement(newQuantumPos, captureDependency[1], settings.measurementType, quantumPos.otherData.whoseTurn)[1]) && makeMeasurement(newQuantumPos, captureDependency[0], settings.measurementType, otherSide(quantumPos.otherData.whoseTurn))[1]) {
 			const capturedUnit: PositionedPiece = findUnit(getSide(newQuantumPos, otherSide(quantumPos.otherData.whoseTurn)), captureDependency[1])!;
-			const capturedObject: ObjectSet = newQuantumPos.objects.find(objectSet => objectSet.units.includes(capturedUnit))!;
-			capturedObject.units.splice(capturedObject.units.indexOf(capturedUnit), 1);
-			cleanEntanglements(capturedObject.units);
+			const capturedUnits: PositionedPiece[] = newQuantumPos.objects.find(objectSet => objectSet.units.includes(capturedUnit))!.units;
+			capturedUnits.splice(capturedUnits.indexOf(capturedUnit), 1);
+			cleanEntanglements(capturedUnits);
 		}
 	}
 	newQuantumPos.objects = newQuantumPos.objects.filter(objectSet => objectSet.units.length);
@@ -606,13 +631,9 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	if (!newEnpassant) {
 		newQuantumPos.otherData.enpassant = false;
 	}
-	const castleValues: [boolean, boolean, boolean, boolean] = getCastleValues(objectsToGamePosition(newQuantumPos));
-	newQuantumPos.otherData.castling.canWhiteCastleLeft  &&= castleValues[0];
-	newQuantumPos.otherData.castling.canWhiteCastleRight &&= castleValues[1];
-	newQuantumPos.otherData.castling.canBlackCastleLeft  &&= castleValues[2];
-	newQuantumPos.otherData.castling.canBlackCastleRight &&= castleValues[3];
+	updateCastling(newQuantumPos);
 	newQuantumPos.otherData.whoseTurn = otherSide(quantumPos.otherData.whoseTurn);
-	if (settings.winByCheckmate) {
+	if (settings.winByCheckmate && !settings.explosiveCheckmate) {
 		const kingUnits: PositionedPiece[] = findObjectFromType(newQuantumPos)!.units;
 		kingUnits.slice().forEach(unit => {
 			while (kingUnits.includes(unit) && getCheckingDependencies([unit.state], newQuantumPos, newQuantumPos.otherData.whoseTurn).length) {
@@ -638,20 +659,17 @@ export function generatePlayResults(play: Play, quantumPos: ObjectPosition, sett
 	if (settings.winByCheckmate && isInCheck(objectsToFilledPosition(quantumPos))) {
 		playSound = Sounds.check;
 	}
-	return [newQuantumPos, playSound, (settings.winByCheckmate ? detectCheckmate(newQuantumPos) : !findObjectFromType(newQuantumPos)) ? originalPos.otherData.whoseTurn : findObjectFromType(newQuantumPos, originalPos.otherData.whoseTurn) ? false : newQuantumPos.otherData.whoseTurn];
+	return [newQuantumPos, playSound, (settings.winByCheckmate ? detectCheckmate(newQuantumPos, settings.explosiveCheckmate) : !findObjectFromType(newQuantumPos)) ? originalPos.otherData.whoseTurn : findObjectFromType(newQuantumPos, originalPos.otherData.whoseTurn) ? false : newQuantumPos.otherData.whoseTurn];
 }
 
 export function candidateMoves(unit: PositionedPiece, quantumPos: ObjectPosition, side: keyof typeof Sides = quantumPos.objects.find(objectSet => objectSet.units.includes(unit))!.pieceType.side): DeclaredMove[] {
 	const rawType: keyof typeof Pieces = getUnitType(quantumPos, unit);
-	const currentMoves: Move[] = chessboard.map(coord => rawType === Pieces.pawn && coord.y === promotionRank(side) ? {
+	const currentMoves: Move[] = chessboard.map(coord => ({
 		start: discardPromotion(unit.state),
-		end: Object.assign(structuredClone(coord), {
+		end: rawType === Pieces.pawn && coord.y === promotionRank(side) ? Object.assign(structuredClone(coord), {
 			promotion: Pieces.queen,
-		}),
-	} : {
-		start: discardPromotion(unit.state),
-		end: structuredClone(coord),
-	}).filter(move => isInRange(move, rawType, side));
+		}) : structuredClone(coord),
+	})).filter(move => isInRange(move, rawType, side));
 	if (rawType === Pieces.pawn && quantumPos.otherData.enpassant && !findObject(quantumPos, quantumPos.otherData.enpassant)) {
 		const removeIndex: number = currentMoves.findIndex(move => areCoordsEqual((move as StandardMove).end, quantumPos.otherData.enpassant as Coord));
 		if (removeIndex !== -1) {
@@ -700,8 +718,8 @@ export function candidateMoves(unit: PositionedPiece, quantumPos: ObjectPosition
 	}));
 }
 
-export function detectCheckmate(quantumPos: ObjectPosition, whoseTurn: keyof typeof Sides = quantumPos.otherData.whoseTurn): boolean {
-	if (!isInCheck(generatePossiblePositions(quantumPos)[0]!, whoseTurn)) {
+export function detectCheckmate(quantumPos: ObjectPosition, explosiveCheckmate: boolean = defaultSettings.explosiveCheckmate, whoseTurn: keyof typeof Sides = quantumPos.otherData.whoseTurn): boolean {
+	if (generatePossiblePositions(quantumPos, undefined, undefined, !explosiveCheckmate).every(completedPos => !isInCheck(completedPos, whoseTurn))) {
 		return false;
 	}
 	for (const objectSet of getSide(quantumPos)) {
@@ -771,15 +789,7 @@ export function areValidObjects(objectPosition: ObjectPosition): boolean {
 	} catch {
 		return false;
 	}
-	return objectPosition.otherData.qubits.whiteBalance >= 0 && objectPosition.otherData.qubits.blackBalance >= 0 &&
-	       objectPosition.objects.every(objectSet => objectSet.units.reduce((accumulator, current) => ({
-		       state: {
-			       x: 1,
-			       y: 1,
-			       probability: Fraction.sum(accumulator.state.probability, current.state.probability),
-		       },
-		       entangledTo: [],
-	       })).state.probability.lessThanOrEqualTo(new Fraction) && objectSet.units.every(unit => unit.state.probability.numerator > 0 && unit.state.probability.denominator > 0 && (objectSet.pieceType.type_p !== Pieces.pawn || objectSet.units.every(unit => (![1, 8].includes(unit.state.y) || unit.state.promotion) && validPromotions.has(unit.state.promotion))) && (objectSet.pieceType.type_p === Pieces.pawn || objectSet.units.every(unit => unit.state.promotion === undefined))));
+	return objectPosition.otherData.qubits.whiteBalance >= 0 && objectPosition.otherData.qubits.blackBalance >= 0 && objectPosition.objects.every(objectSet => totalProbability(objectSet).lessThanOrEqualTo(new Fraction) && objectSet.units.every(unit => unit.state.probability.numerator > 0 && unit.state.probability.denominator > 0 && (objectSet.pieceType.type_p !== Pieces.pawn || objectSet.units.every(unit => (![1, 8].includes(unit.state.y) || unit.state.promotion) && validPromotions.has(unit.state.promotion))) && (objectSet.pieceType.type_p === Pieces.pawn || objectSet.units.every(unit => unit.state.promotion === undefined))));
 }
 
 export function isValidObjectsString(candidateString: string) {
@@ -790,10 +800,14 @@ export function isValidObjectsString(candidateString: string) {
 	}
 }
 
+export function checkEnpassant(quantumPos: ObjectPosition): boolean {
+	return !quantumPos.otherData.enpassant || isCoord(quantumPos.otherData.enpassant) && [3, 6].includes(quantumPos.otherData.enpassant.y) && quantumPos.objects.some(objectSet => objectSet.pieceType.type_p === Pieces.pawn && objectSet.pieceType.side === otherSide(quantumPos.otherData.whoseTurn) && objectSet.units.some(unit => !unit.state.promotion && areCoordsEqual(translateCoord(unit.state, 0, enpassantDisplacement(quantumPos.otherData.whoseTurn), true), quantumPos.otherData.enpassant as Coord))) && !areOfDifferentObjects(quantumPos, quantumPos.otherData.enpassant, translateCoord(quantumPos.otherData.enpassant, 0, -enpassantDisplacement(quantumPos.otherData.whoseTurn), true));
+}
+
 export function isLegalPosition(quantumPos: ObjectPosition): boolean {
 	return areValidObjects(quantumPos) &&
 	       getSide(quantumPos, Sides.white).filter(objectSet => objectSet.pieceType.type_p === Pieces.king).length === 1 && getSide(quantumPos, Sides.black).filter(objectSet => objectSet.pieceType.type_p === Pieces.king).length === 1 &&
-	       (!quantumPos.otherData.enpassant || isCoord(quantumPos.otherData.enpassant) && [3, 6].includes(quantumPos.otherData.enpassant.y) && quantumPos.objects.some(objectSet => objectSet.pieceType.type_p === Pieces.pawn && objectSet.pieceType.side === otherSide(quantumPos.otherData.whoseTurn) && objectSet.units.some(unit => !unit.state.promotion && areCoordsEqual(translateCoord(unit.state, 0, enpassantDisplacement(quantumPos.otherData.whoseTurn), true), quantumPos.otherData.enpassant as Coord))) && !areOfDifferentObjects(quantumPos, quantumPos.otherData.enpassant, translateCoord(quantumPos.otherData.enpassant, 0, -enpassantDisplacement(quantumPos.otherData.whoseTurn), true))) &&
+	       checkEnpassant(quantumPos) &&
 	       (!quantumPos.otherData.castling.canWhiteCastleLeft  || getCastleValues(objectsToGamePosition(quantumPos))[0]) &&
 	       (!quantumPos.otherData.castling.canWhiteCastleRight || getCastleValues(objectsToGamePosition(quantumPos))[1]) &&
 	       (!quantumPos.otherData.castling.canBlackCastleLeft  || getCastleValues(objectsToGamePosition(quantumPos))[2]) &&
@@ -802,4 +816,12 @@ export function isLegalPosition(quantumPos: ObjectPosition): boolean {
 
 export function isLegalPositionString(candidateString: string): boolean {
 	return isValidObjectsString(candidateString) && isLegalPosition(getObjectsFromString(candidateString));
+}
+
+export function countPositions(objectPosition: ObjectPosition) {
+	return objectPosition.objects.reduce((accumulator, current) => accumulator * (current.units.length + Number(totalProbability(current).lessThan(new Fraction))), 1);
+}
+
+export function totalProbability(objectSet: ObjectSet): Fraction {
+	return objectSet.units.reduce((accumulator, current) => Fraction.sum(accumulator, current.state.probability), new Fraction(0));
 }

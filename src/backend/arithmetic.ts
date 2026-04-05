@@ -92,12 +92,12 @@ export default class Fraction {
 		return new Fraction(-fraction.numerator, fraction.denominator);
 	}
 
-	static difference(fractionOne: Fraction, fractionTwo: Fraction): Fraction {
-		return Fraction.sum(fractionOne, Fraction.negative(fractionTwo));
+	static difference(fracOne: Fraction, fracTwo: Fraction): Fraction {
+		return Fraction.sum(fracOne, Fraction.negative(fracTwo));
 	}
 
-	static quotient(fractionOne: Fraction, fractionTwo: Fraction): Fraction {
-		return Fraction.product(fractionOne, Fraction.reciprocal(fractionTwo));
+	static quotient(fracOne: Fraction, fracTwo: Fraction): Fraction {
+		return Fraction.product(fracOne, Fraction.reciprocal(fracTwo));
 	}
 
 	subtract(other: Fraction): Fraction {
@@ -138,5 +138,9 @@ export default class Fraction {
 		} else {
 			return obj;
 		}
+	}
+
+	static min(fracOne: Fraction, fracTwo: Fraction) {
+		return fracOne.lessThan(fracTwo) ? fracOne : fracTwo;
 	}
 }
