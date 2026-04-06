@@ -504,7 +504,7 @@ export function makePlay(): void {
 		window.play.defaultMoves = filteredPlay.defaultMoves;
 		const previousPosition: any[] = [];
 		previousPosition.push(piece.positionalClone(window.position));
-		const playResults: [ObjectPosition, boolean] = logic.generatePlayResults(window.play, window.position, window.gameSettings);
+		const playResults: [ObjectPosition, keyof typeof tools.Sounds, keyof typeof piece.Sides | false] = logic.generatePlayResults(window.play, window.position, window.gameSettings);
 		previousPosition.push(playResults[1], playResults[2]);
 		window.previous.positions.push(previousPosition);
 		window.previous.plays.push(window.play);
