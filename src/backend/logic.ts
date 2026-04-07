@@ -420,7 +420,7 @@ export function isPlayLegal(play: Play, quantumPos: ObjectPosition, settings: Ga
 	return !checkPlayValidity(play, quantumPos, settings).size;
 }
 
-export function getCheckingDependencies(checkedCoords: Coord[], quantumPos: ObjectPosition, filledPos: CompletedPosition = objectsToFilledPosition(quantumPos), playedObject?: ObjectSet, firstMove?: Move, side: keyof typeof Sides = quantumPos.otherData.whoseTurn): Coord[] {
+export function getCheckingDependencies(checkedCoords: Coord[], quantumPos: ObjectPosition, filledPos: CompletedPosition = objectsToFilledPosition(quantumPos), firstMove?: Move, playedObject?: ObjectSet, side: keyof typeof Sides = quantumPos.otherData.whoseTurn, hiddenCheck: boolean = false): Coord[] {
 	if (firstMove) {
 		getResultOfMove(firstMove, filledPos);
 	}
@@ -429,13 +429,13 @@ export function getCheckingDependencies(checkedCoords: Coord[], quantumPos: Obje
 			possiblePositions.forEach(completedPos => getResultOfMove(firstMove, completedPos));
 		}
 		return possiblePositions.some(completedPos => predicate(completedPos)) && possiblePositions.some(completedPos => !predicate(completedPos));
-	})(generatePossiblePositions(quantumPos, playedObject ? quantumPos.objects.indexOf(playedObject) : undefined, firstMove ? playedObject?.units.findIndex(unit => areCoordsEqual(unit.state, generateStartMiddleEnd(firstMove)[0])) : undefined), ((completedPos: CompletedPosition) => findPiece(completedPos, checkedCoord) && findPiece(completedPos, checkingPiece.state) && (actualType(checkingPiece) === Pieces.knight || !isBlocked({
+	})(generatePossiblePositions(quantumPos, playedObject ? quantumPos.objects.indexOf(playedObject) : undefined, firstMove ? playedObject?.units.findIndex(unit => areCoordsEqual(unit.state, generateStartMiddleEnd(firstMove)[0])) : undefined), ((completedPos: CompletedPosition) => (hiddenCheck || findPiece(completedPos, checkedCoord)) && findPiece(completedPos, checkingPiece.state) && (actualType(checkingPiece) === Pieces.knight || !isBlocked({
 		start: checkingPiece.state,
 		end: checkedCoord,
 	}, completedPos)))) ? (actualType(checkingPiece) === Pieces.knight ? [] : getBlockingPieces({
 		start: checkingPiece.state,
 		end: checkedCoord,
-	}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.state))).concat(checkedCoord, discardPromotion(checkingPiece.state)).filter(coord => !(firstMove && areCoordsEqual(coord, generateStartMiddleEnd(firstMove)[2]))) : []));
+	}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.state))).concat(hiddenCheck ? [] : [checkedCoord], discardPromotion(checkingPiece.state)).filter(coord => !(firstMove && areCoordsEqual(coord, generateStartMiddleEnd(firstMove)[2]))) : []));
 }
 
 export function generateDependencies(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate): Coord[] {
@@ -457,13 +457,13 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 		currentDependencies.push(...significantSquares[1].filter(coord => findPiece(filledPos, coord)));
 	}
 	if (winByCheckmate) {
-		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos)!.units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), playedObject, declaredMove.move));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos)!.units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), declaredMove.move, playedObject));
 		if (moveType(declaredMove.move) === SpecialMoves.castle) {
-			currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]!], quantumPos, structuredClone(filledPos), playedObject).filter(dependency => !areCoordsEqual(dependency, significantSquares[1][0]!)));
+			currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]!], quantumPos, structuredClone(filledPos), undefined, playedObject, undefined, true));
 		}
 	}
 	if (declaredMove.declarations.has(MoveDeclarations.checkOnly) || declaredMove.declarations.has(MoveDeclarations.noCheck)) {
-		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), playedObject, declaredMove.move, otherSide(quantumPos.otherData.whoseTurn)));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), declaredMove.move, playedObject, otherSide(quantumPos.otherData.whoseTurn)));
 	}
 	const filteredDependencies: Coord[] = [];
 	currentDependencies.forEach(dependency => {
