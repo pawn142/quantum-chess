@@ -435,7 +435,7 @@ export function getCheckingDependencies(checkedCoords: Coord[], quantumPos: Obje
 	}, completedPos)))) ? (actualType(checkingPiece) === Pieces.knight ? [] : getBlockingPieces({
 		start: checkingPiece.state,
 		end: checkedCoord,
-	}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.state))).concat(checkedCoord, discardPromotion(checkingPiece.state)).filter(coord => !(firstMove && areCoordsEqual(coord, generateStartMiddleEnd(firstMove)[2]))) : []));
+	}, filledPos).map(blockingPiece => discardPromotion(blockingPiece.state))).concat(firstMove && moveType(firstMove) === SpecialMoves.castle ? [] : [checkedCoord], discardPromotion(checkingPiece.state)).filter(coord => !(firstMove && areCoordsEqual(coord, generateStartMiddleEnd(firstMove)[2]))) : []));
 }
 
 export function generateDependencies(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate): Coord[] {
