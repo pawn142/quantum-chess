@@ -448,7 +448,7 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 	});
 	filledPos.pieces.push({
 		pieceType: playedObject.pieceType,
-		state: { ...findUnit([playedObject], significantSquares[0])!.state },
+		state: findUnit([playedObject], significantSquares[0])!.state,
 	});
 	if (declaredMove.declarations.has(MoveDeclarations.captureOnly) || declaredMove.declarations.has(MoveDeclarations.noCapture) && findPiece(filledPos, getCapturedSquare(declaredMove.move)) || isEndpointBlocked(declaredMove.move, filledPos)) {
 		currentDependencies.push(getCapturedSquare(declaredMove.move));
@@ -457,13 +457,13 @@ export function generateDependencies(declaredMove: DeclaredMove, quantumPos: Obj
 		currentDependencies.push(...significantSquares[1].filter(coord => findPiece(filledPos, coord)));
 	}
 	if (winByCheckmate) {
-		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos)!.units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, filledPos, declaredMove.move, playedObject));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos)!.units.map(unit => areCoordsEqual(unit.state, significantSquares[0]) ? significantSquares[2] : discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), declaredMove.move, playedObject));
 		if (moveType(declaredMove.move) === SpecialMoves.castle) {
-			currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]!], quantumPos, filledPos, declaredMove.move, playedObject));
+			currentDependencies.push(...getCheckingDependencies([significantSquares[0], significantSquares[1][0]!], quantumPos, structuredClone(filledPos), declaredMove.move, playedObject));
 		}
 	}
 	if (declaredMove.declarations.has(MoveDeclarations.checkOnly) || declaredMove.declarations.has(MoveDeclarations.noCheck)) {
-		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.state)), quantumPos, filledPos, declaredMove.move, playedObject, otherSide(quantumPos.otherData.whoseTurn)));
+		currentDependencies.push(...getCheckingDependencies(findObjectFromType(quantumPos, otherSide(quantumPos.otherData.whoseTurn))!.units.map(unit => discardPromotion(unit.state)), quantumPos, structuredClone(filledPos), declaredMove.move, playedObject, otherSide(quantumPos.otherData.whoseTurn)));
 	}
 	const filteredDependencies: Coord[] = [];
 	currentDependencies.forEach(dependency => {
