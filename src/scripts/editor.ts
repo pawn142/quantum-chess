@@ -281,10 +281,10 @@ export function setup(): void {
 							break;
 						case "copy":
 							positionCopy.objects.push({
-								pieceType: affectedObject.pieceType,
+								pieceType: { ...affectedObject.pieceType },
 								units: [{
 									state: {
-										...Fraction.fractionalClone(piece.findUnit(positionCopy.objects, window.annotation.coord)).state,
+										...Fraction.fractionalClone(piece.findUnit(positionCopy.objects, window.annotation.coord).state),
 										...coord,
 									},
 									entangledTo: [],
