@@ -336,7 +336,7 @@ export function setup(): void {
 			} else {
 				const matchingMove: piece.DeclaredMove | undefined = logic.candidateMoves(piece.findUnit(piece.getSide(window.position), window.selection.coord), window.position).find(candidateMove => piece.areCoordsEqual(logic.generateStartMiddleEnd(candidateMove.move)[2], coord));
 				const previousArrow: HTMLDivElement | null = document.querySelector(`[id$="${window.selection.coord.x.toString() + window.selection.coord.y + coord.x + coord.y}"]`);
-				if (!window.gameOver && (previousArrow || matchingMove && logic.generatePossiblePositions(window.position, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))).some(possiblePosition => logic.isMoveLegal(matchingMove, possiblePosition, window.gameSettings.winByCheckmate)))) {
+				if (!window.gameOver && (previousArrow || matchingMove && logic.isMovePossible(matchingMove, window.position, window.gameSettings.winByCheckmate, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))))) {
 					if (previousArrow) {
 						if (previousArrow.classList.contains("primary")) {
 							if (clickType === "left") {

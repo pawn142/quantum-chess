@@ -349,9 +349,9 @@ export function positionalClone(quantumPos: ObjectPosition): ObjectPosition {
 	return currentPos;
 }
 
-export function objectsToSparsePosition(quantumPos: ObjectPosition): CompletedPosition {
+export function objectsToSparsePosition(quantumPos: ObjectPosition, includeUnit?: PositionedPiece): CompletedPosition {
 	return {
-		pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.filter(unit => unit.state.probability.equalTo(new Fraction)).map(unit => ({
+		pieces: quantumPos.objects.flatMap(objectSet => objectSet.units.filter(unit => unit === includeUnit || unit.state.probability.equalTo(new Fraction)).map(unit => ({
 			pieceType: { ...objectSet.pieceType },
 			state: discardProbability(unit.state),
 		}))),

@@ -2,7 +2,7 @@ import Fraction from "./arithmetic.js";
 import assert from "../assert.js";
 import { Sounds } from "../scripts/toolbox.js";
 
-import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, getSide, getUnitType, isCoord, isStandardMove, moveType, objectsToFilledPosition, otherSide, pawnRank, positionalClone, promotionRank, translateCoord, validPromotions, CastleMove, ChessboardPosition, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, PieceCosts, PieceValues, Play, PositionedPiece, Sides, SpecialMoves, StandardMove } from "./piecetypes.js";
+import { actualType, allDeclarations, areCoordsEqual, areOfDifferentObjects, chessboard, completedPositionToObjects, coordToIndex, defaultData, defaultPosition, discardPromotion, discardProbability, enpassantDisplacement, findObject, findObjectFromType, findPiece, findPieceFromType, findUnit, getCastleProperty, getCoordType, getRespectiveQubitAmount, getSide, getUnitType, isCoord, isStandardMove, moveType, objectsToFilledPosition, objectsToSparsePosition, otherSide, pawnRank, positionalClone, promotionRank, translateCoord, validPromotions, CastleMove, ChessboardPosition, CompletedPosition, CompletedSet, Coord, DeclaredMove, Enpassant, GameData, Move, MoveDeclarations, ObjectPosition, ObjectSet, PartialCoord, PawnDoubleMove, Pieces, PieceCosts, PieceValues, Play, PositionedPiece, Sides, SpecialMoves, StandardMove } from "./piecetypes.js";
 import { allowedDeclarations, coordserialize, decodeSegment, defaultSettings, getCastleValues, getDataFromString, getDataString, measurePartiallyCaptured, objectsToGamePosition, GameSettings } from "./metatypes.js";
 import { chooseElement, chooseWeightedElement, random } from "./random.js";
 
@@ -316,8 +316,8 @@ export function generatePossiblePositions(quantumPos: ObjectPosition, fixedObjec
 	return completedPositions;
 }
 
-export function isMovePossible(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate): boolean {
-	return generatePossiblePositions(quantumPos).some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
+export function isMovePossible(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate, fixedObjectIndex?: number, fixedUnitIndex?: number): boolean {
+	return generatePossiblePositions(quantumPos, fixedObjectIndex, fixedUnitIndex).some(completedPos => isMoveLegal(declaredMove, completedPos, winByCheckmate));
 }
 
 export function isMoveAlwaysLegal(declaredMove: DeclaredMove, quantumPos: ObjectPosition, winByCheckmate: boolean = defaultSettings.winByCheckmate, fixedObjectIndex?: number, fixedUnitIndex?: number): boolean {
@@ -354,6 +354,7 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 		return new Set(play.defaultMoves.length ? ["Cannot have only default moves"] : settings.nullPlays ? (settings.winByCheckmate && generatePossiblePositions(quantumPos).some(completedPos => isInCheck(completedPos)) ? ["You might be in check"] : []) : ["Null plays are not allowed in settings"]);
 	}
 	assert(playedObject?.pieceType.side === quantumPos.otherData.whoseTurn, "Invalid object index passed into 'isPlayLegal'");
+	assert([...play.primaryMoves, ...play.defaultMoves].every(declaredMove => findObject(quantumPos, generateStartMiddleEnd(declaredMove.move)[0]) === playedObject), "Invalid move(s) passed into 'isPlayLegal'");
 	if ([...play.primaryMoves, ...play.defaultMoves].some(declaredMove => !declaredMove.declarations.difference(getRequiredDeclarations(declaredMove.move, getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0])!)).isSubsetOf(allowedDeclarations(settings)))) {
 		problems.add("One or more external declarations are turned off in settings");
 	}
@@ -372,16 +373,16 @@ export function checkPlayValidity(play: Play, quantumPos: ObjectPosition, settin
 			return false;
 		}
 		const stackedObjectIndex: number = quantumPos.objects.indexOf(findObject(quantumPos, stackedUnit.state)!);
-		const stackedUnitIndex: number = findObject(quantumPos, stackedUnit.state)!.units.indexOf(stackedUnit);
+		const stackedUnitIndex: number = quantumPos.objects[stackedObjectIndex]!.units.indexOf(stackedUnit);
 		return getUnitType(quantumPos, stackedUnit) !== getCoordType(quantumPos, generateStartMiddleEnd(declaredMove.move)[0]) && !(localPrimaries => localPrimaries.length && localPrimaries.every(escapeMove => isMoveAlwaysLegal(escapeMove, quantumPos, settings.winByCheckmate, stackedObjectIndex, stackedUnitIndex)))(getLocalMoves(play.primaryMoves, stackedUnit.state)) && !(escapeDefault => escapeDefault && isMoveAlwaysLegal(escapeDefault, quantumPos, settings.winByCheckmate, stackedObjectIndex, stackedUnitIndex))(getLocalMoves(play.defaultMoves, stackedUnit.state)[0]);
 	})) {
 		problems.add("Possibility for stacking of different promotion values");
 	}
-	const unitPositions: Set<string> = new Set(playedObject!.units.map(unit => JSON.stringify(discardPromotion(unit.state))));
-	if (play.primaryMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
+	const predicate = (declaredMove: DeclaredMove) => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate, play.objectIndex, playedObject!.units.indexOf(findUnit([playedObject!], generateStartMiddleEnd(declaredMove.move)[0])!));
+	if (play.primaryMoves.some(declaredMove => predicate(declaredMove))) {
 		problems.add("One or more primary moves are impossible");
 	}
-	if (play.defaultMoves.some(declaredMove => !isMovePossible(declaredMove, quantumPos, settings.winByCheckmate) || !unitPositions.has(JSON.stringify(generateStartMiddleEnd(declaredMove.move)[0])))) {
+	if (play.defaultMoves.some(declaredMove => predicate(declaredMove))) {
 		problems.add("One or more default moves are impossible");
 	}
 	if (calculateQubitCost(play, playedObject!, settings.advancedQubitMode) - getRespectiveQubitAmount(quantumPos.otherData) > epsilon) {
@@ -719,7 +720,7 @@ export function candidateMoves(unit: PositionedPiece, quantumPos: ObjectPosition
 			}
 		}
 	}
-	return currentMoves.map(candidateMove => ({
+	return currentMoves.filter(candidateMove => (completedPos => !isEndpointBlocked(candidateMove, completedPos) && (rawType === Pieces.knight || !isBlocked(candidateMove, completedPos)))(objectsToSparsePosition(quantumPos, unit))).map(candidateMove => ({
 		move: candidateMove,
 		declarations: getRequiredDeclarations(candidateMove, rawType),
 	}));
