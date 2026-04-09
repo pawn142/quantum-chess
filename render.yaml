@@ -2,7 +2,7 @@ services:
   - type: web
     name: quantum-chess
     runtime: node
-    buildCommand: npm install && npm rebuild sqlite3 --build-from-source && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -10,6 +10,6 @@ services:
       - key: DATABASE_PATH
         value: /var/data/data.sqlite
     disk:
-      name: chess-data
+      name: qc-data
       mountPath: /var/data
       sizeGB: 1

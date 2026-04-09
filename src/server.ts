@@ -17,7 +17,7 @@ const app = Fastify({ logger: true });
 await app.register(cookie);
 await app.register(websocket);
 
-const db = new SqliteDatabase("./data.sqlite");
+const db = new SqliteDatabase();
 const crypto = new CryptoService();
 const auth = new AuthService(db, crypto);
 const profile = new ProfileService(db);
