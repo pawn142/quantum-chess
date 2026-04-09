@@ -35,12 +35,12 @@ await registerGameWebSocketRoutes(app, auth, rooms);
 const port = Number(process.env.PORT ?? 3000);
 
 await app.register(fastifyStatic, {
-	root: path.join(process.cwd(), "pages"),
+	root: path.join(process.cwd(), "public"),
 	prefix: "/"
 });
 
 app.get("/", async(_req, reply) => {
-	return reply.sendFile("pages/lobby.html");
+	return reply.sendFile("lobby.html");
 });
 
 await app.listen({ port, host: "0.0.0.0" });

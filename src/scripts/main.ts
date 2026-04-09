@@ -1,4 +1,3 @@
-/* eslint-disable space-before-function-paren */
 // @ts-nocheck
 
 import { ApiClient } from "./api.js";
@@ -27,7 +26,7 @@ function textInput(form: HTMLFormElement, name: string): string {
 	return el?.value.trim() ?? "";
 }
 
-els.signupForm?.addEventListener("submit", async (event) => {
+els.signupForm?.addEventListener("submit", async(event) => {
 	event.preventDefault();
 	try {
 		const result = await api.signup({
@@ -41,7 +40,7 @@ els.signupForm?.addEventListener("submit", async (event) => {
 	}
 });
 
-els.loginForm?.addEventListener("submit", async (event) => {
+els.loginForm?.addEventListener("submit", async(event) => {
 	event.preventDefault();
 	try {
 		const result = await api.login({
@@ -54,7 +53,7 @@ els.loginForm?.addEventListener("submit", async (event) => {
 	}
 });
 
-els.meButton?.addEventListener("click", async () => {
+els.meButton?.addEventListener("click", async() => {
 	try {
 		const result = await api.me();
 		print({ action: "me", result });
@@ -63,7 +62,7 @@ els.meButton?.addEventListener("click", async () => {
 	}
 });
 
-els.createRoomButton?.addEventListener("click", async () => {
+els.createRoomButton?.addEventListener("click", async() => {
 	try {
 		const result = await api.createRoom({ variantId: "standard" });
 		if (els.roomIdInput) els.roomIdInput.value = result.roomId;
@@ -73,7 +72,7 @@ els.createRoomButton?.addEventListener("click", async () => {
 	}
 });
 
-els.joinQueueButton?.addEventListener("click", async () => {
+els.joinQueueButton?.addEventListener("click", async() => {
 	try {
 		const result = await api.joinQueue("standard");
 		print({ action: "joinQueue", result });

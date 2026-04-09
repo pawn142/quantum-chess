@@ -66,7 +66,6 @@ export type RoomState = {
 };
 
 export class ApiClient {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private baseUrl: string) {}
 
 	private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
