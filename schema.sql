@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
 	id TEXT PRIMARY KEY,
 	email TEXT NOT NULL UNIQUE,
 	password_hash TEXT NULL,
-	status TEXT NOT NULL DEFAULT 'active',
+	is_active BOOLEAN NOT NULL DEFAULT true,
 	created_at TEXT NOT NULL,
 	updated_at TEXT NOT NULL
 );
@@ -11,10 +11,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 	user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
 	display_name TEXT NOT NULL UNIQUE,
 	avatar_url TEXT NULL,
-	bio TEXT NULL,
-	country_code TEXT NULL,
-	preferred_variant TEXT NULL,
-	rating INTEGER NOT NULL DEFAULT 1200,
+	rating INTEGER NOT NULL DEFAULT 1000,
 	wins INTEGER NOT NULL DEFAULT 0,
 	losses INTEGER NOT NULL DEFAULT 0,
 	draws INTEGER NOT NULL DEFAULT 0,

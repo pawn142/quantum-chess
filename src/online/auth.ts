@@ -24,7 +24,7 @@ export default class AuthService {
 		const userId = crypto.randomUUID();
 		const now = new Date().toISOString();
 		await this.db.execute(
-			`INSERT INTO users (id, email, password_hash, active, created_at, updated_at)
+			`INSERT INTO users (id, email, password_hash, is_active, created_at, updated_at)
 			 VALUES (?, ?, ?, true, ?, ?)`,
 			[userId, email, await this.crypto.hashPassword(input.password), now, now]
 		);
@@ -52,13 +52,13 @@ export default class AuthService {
 		userAgent?: string | null;
 	}): Promise<{ user: User; profile: UserProfile; sessionToken: string }> {
 		const user = (await this.db.query<User>(
-			`SELECT id, email, password_hash AS passwordHash, active,
+			`SELECT id, email, password_hash AS passwordHash, is_active AS isActive,
 			        created_at AS createdAt, updated_at AS updatedAt
 			 FROM users WHERE email = ? LIMIT 1`,
 			[input.email.trim().toLowerCase()]
 		))[0];
 		if (!user || !user.passwordHash) throw new Error("Invalid credentials");
-		assert(user.active, "Account disabled");
+		assert(user.isActive, "Account disabled");
 		assert(await this.crypto.verifyPassword(input.password, user.passwordHash), "Invalid credentials");
 		const { sessionToken } = await this.createSession({
 			userId: user.id,
@@ -87,7 +87,7 @@ export default class AuthService {
 		))[0];
 		if (!session || session.revokedAt || new Date(session.expiresAt).getTime() < Date.now()) return null;
 		const user = await this.getUserById(session.userId);
-		if (!user || !user.active) return null;
+		if (!user || !user.isActive) return null;
 		const profile = await this.getProfileByUserId(user.id);
 		if (!profile) return null;
 		return { user, profile };
@@ -110,7 +110,7 @@ export default class AuthService {
 
 	private async getUserById(userId: string): Promise<User | null> {
 		return (await this.db.query<User>(
-			`SELECT id, email, password_hash AS passwordHash, active, created_at AS createdAt, updated_at AS updatedAt
+			`SELECT id, email, password_hash AS passwordHash, is_active AS isActive, created_at AS createdAt, updated_at AS updatedAt
 			 FROM users WHERE id = ? LIMIT 1`,
 			[userId]
 		))[0] ?? null;
