@@ -1,35 +1,37 @@
-import sqlite3 from "sqlite3";
-
-sqlite3.verbose();
+import { DatabaseSync, SQLInputValue } from "node:sqlite";
 
 export interface Database {
 	query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
 	execute(sql: string, params?: unknown[]): Promise<void>;
+	transaction<T>(fn: (db: Database) => Promise<T>): Promise<T>;
 }
 
 export class SqliteDatabase implements Database {
-	private db: sqlite3.Database;
+	private readonly db: DatabaseSync;
 
 	constructor(filename: string = process.env.DATABASE_PATH ?? "./data.sqlite") {
-		this.db = new sqlite3.Database(filename);
+		this.db = new DatabaseSync(filename);
+		this.db.exec("PRAGMA foreign_keys = ON;");
+		this.db.exec("PRAGMA journal_mode = WAL;");
 	}
 
-	query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
-		return new Promise((resolve, reject) => {
-			this.db.all(sql, params, (err, rows) => {
-				if (err) return reject(err);
-				resolve(rows as T[]);
-			});
-		});
+	async query<T = unknown>(sql: string, params: SQLInputValue[] = []): Promise<T[]> {
+		return this.db.prepare(sql).all(...params) as T[];
 	}
 
-	execute(sql: string, params: unknown[] = []): Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.db.run(sql, params, function(err) {
-				if (err) return reject(err);
-				resolve();
-			});
-		});
+	async execute(sql: string, params: SQLInputValue[] = []): Promise<void> {
+		this.db.prepare(sql).run(...params);
+	}
+
+	async transaction<T>(fn: (db: Database) => Promise<T>): Promise<T> {
+		this.db.exec("BEGIN");
+		try {
+			const result = await fn(this);
+			this.db.exec("COMMIT");
+			return result;
+		} catch (err) {
+			this.db.exec("ROLLBACK");
+			throw err;
+		}
 	}
 }
-
