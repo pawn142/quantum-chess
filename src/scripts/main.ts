@@ -19,7 +19,7 @@ const els = {
 
 function print(value: unknown): void {
 	if (!els.output) return;
-	els.output.textContent = JSON.stringify(value, null, 2);
+	els.output.textContent = JSON.stringify(value);
 }
 
 function textInput(form: HTMLFormElement, name: string): string {
@@ -79,17 +79,5 @@ els.joinQueueButton?.addEventListener("click", async () => {
 		print({ action: "joinQueue", result });
 	} catch (error) {
 		print({ action: "joinQueue", error: String(error) });
-	}
-});
-
-els.submitMoveButton?.addEventListener("click", async () => {
-	try {
-		const roomId = els.roomIdInput?.value.trim();
-		const move = els.moveInput?.value.trim();
-		if (!roomId || !move) throw new Error("Room ID and move are required");
-		const result = await api.submitMove(roomId, { move });
-		print({ action: "submitMove", result });
-	} catch (error) {
-		print({ action: "submitMove", error: String(error) });
 	}
 });

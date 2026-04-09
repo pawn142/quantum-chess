@@ -1,7 +1,6 @@
 import { Database } from "./database.js";
 
 export default class RatingService {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private db: Database) {}
 
 	async recordGameResult(input: {

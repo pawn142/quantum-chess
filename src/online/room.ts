@@ -2,7 +2,6 @@ import type { Database } from "./database.js";
 import type { Room, RoomEvent } from "./usertypes.js";
 
 export default class RoomService {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private db: Database) {}
 
 	async createRoom(input: { variantId: string; creatorId: string }): Promise<{ roomId: string }> {

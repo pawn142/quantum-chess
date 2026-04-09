@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import sqlite3 from "sqlite3";
 
 sqlite3.verbose();
@@ -27,7 +25,7 @@ export class SqliteDatabase implements Database {
 
 	execute(sql: string, params: unknown[] = []): Promise<void> {
 		return new Promise((resolve, reject) => {
-			this.db.run(sql, params, function (err) {
+			this.db.run(sql, params, function(err) {
 				if (err) return reject(err);
 				resolve();
 			});

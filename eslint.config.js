@@ -7,7 +7,7 @@ export default [
 		ignores: [ "dist/**/*" ],
 		rules: {
 			"no-undef": "off",
-			"no-unused-vars": "warn",
+			"no-unused-vars": "off",
 			"use-isnan": "error",
 			"semi": ["error", "always"],
 			"semi-spacing": ["error", {

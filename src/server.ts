@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import websocket from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
+import path from "node:path";
 
 import CryptoService from "./online/crypto.js";
 import AuthService from "./online/auth.js";
@@ -28,8 +30,17 @@ const rooms = new RoomService(db);
 await registerRoutes(app, { auth, profile, matchmaking, rating, rooms });
 await registerGameWebSocketRoutes(app, auth, rooms);
 
-// eslint-disable-next-line space-before-function-paren
-app.get("/", async () => ({ ok: true, name: "chess-backend-node" }));
+// app.get("/", async() => ({ ok: true, name: "chess-backend-node" }));
 
 const port = Number(process.env.PORT ?? 3000);
+
+await app.register(fastifyStatic, {
+	root: path.join(process.cwd(), "pages"),
+	prefix: "/"
+});
+
+app.get("/", async(_req, reply) => {
+	return reply.sendFile("pages/lobby.html");
+});
+
 await app.listen({ port, host: "0.0.0.0" });

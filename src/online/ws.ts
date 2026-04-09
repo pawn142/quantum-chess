@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable space-before-function-paren */
 // @ts-nocheck
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -10,7 +8,7 @@ import type AuthService from "./auth.js";
 import type RoomService from "./room.js";
 
 export async function registerGameWebSocketRoutes(app: FastifyInstance, auth: AuthService, roomService: RoomService): Promise<void> {
-	app.get("/games/:roomId/ws", { websocket: true }, async (socket, req) => {
+	app.get("/games/:roomId/ws", { websocket: true }, async(socket, req) => {
 		const request = req as FastifyRequest<{ Params: { roomId: string } }>;
 		const roomId = request.params.roomId;
 		const session = await authenticateFromCookies(request, auth);
@@ -24,7 +22,7 @@ export async function registerGameWebSocketRoutes(app: FastifyInstance, auth: Au
 			userId: session.user.id,
 			username: session.profile.username,
 		}));
-		socket.on("message", async (raw: any) => {
+		socket.on("message", async(raw: any) => {
 			const text = typeof raw === "string" ? raw : raw.toString("utf8");
 			let parsed: unknown;
 			try {

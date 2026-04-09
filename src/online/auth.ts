@@ -4,7 +4,6 @@ import { Database } from "./database.js";
 import { Session, User, UserProfile } from "./usertypes.js";
 
 export default class AuthService {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private db: Database, private crypto: CryptoService) {}
 
 	async signUp(input: {

@@ -1,7 +1,6 @@
 import { Database } from "./database.js";
 
 export default class MatchmakingService {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private db: Database) {}
 
 	async joinQueue(input: { userId: string; variantId: string }): Promise<{ queued: true }> {

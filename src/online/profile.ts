@@ -3,7 +3,6 @@ import { Database } from "./database.js";
 import { UserProfile } from "./usertypes.js";
 
 export default class ProfileService {
-	// eslint-disable-next-line no-unused-vars
 	constructor(private db: Database) {}
 
 	async getPublicProfile(userId: string): Promise<UserProfile | null> {
