@@ -248,17 +248,16 @@ export function setup(): void {
 				}
 			}
 			if (window.action) {
-				const target: boolean = !!piece.findObject(window.position, coord);
-				if (!window.annotation && !(window.action === "not-allowed" && target)) {
-					target ? switchAnnotation() : (resetAction(), handleClick(clickType));
+				const positionCopy: piece.ObjectPosition = piece.positionalClone(window.position);
+				const targetObject: piece.ObjectSet | undefined = piece.findObject(positionCopy, coord);
+				if (!window.annotation && !(window.action === "not-allowed" && targetObject)) {
+					targetObject ? switchAnnotation() : (resetAction(), handleClick(clickType));
 					return;
 				}
-				if (window.annotation === squareDiv || window.action === "crosshair" && !target) {
+				if (window.annotation === squareDiv || window.action === "crosshair" && !targetObject) {
 					removeAnnotation(), resetAction();
 					return;
 				}
-				const positionCopy: piece.ObjectPosition = piece.positionalClone(window.position);
-				const targetObject: piece.ObjectSet | undefined = piece.findObject(positionCopy, coord);
 				function removeCoord(): void {
 					targetObject.units.splice(targetObject.units.findIndex(unit => piece.areCoordsEqual(unit.state, coord)), 1);
 					logic.cleanEntanglements(targetObject.units);
@@ -326,14 +325,7 @@ export function setup(): void {
 				}
 				return;
 			}
-			if (!window.selection) {
-				if (clickType === "left") {
-					if (piece.findUnit(piece.getSide(window.position), coord)) {
-						switchSelection();
-					}
-					return;
-				}
-			} else {
+			if (window.selection) {
 				const matchingMove: piece.DeclaredMove | undefined = logic.candidateMoves(piece.findUnit(piece.getSide(window.position), window.selection.coord), window.position).find(candidateMove => piece.areCoordsEqual(logic.generateStartMiddleEnd(candidateMove.move)[2], coord));
 				const previousArrow: HTMLDivElement | null = document.querySelector(`[id$="${window.selection.coord.x.toString() + window.selection.coord.y + coord.x + coord.y}"]`);
 				if (!window.gameOver && (previousArrow || matchingMove && logic.isMovePossible(matchingMove, window.position, window.gameSettings.winByCheckmate, window.play.objectIndex, window.position.objects[window.play.objectIndex].units.findIndex(unit => piece.areCoordsEqual(unit.state, window.selection.coord))))) {
@@ -367,6 +359,13 @@ export function setup(): void {
 				} else if (clickType === "left") {
 					if (piece.findUnit(piece.getSide(window.position), coord)) {
 						piece.areCoordsEqual(window.selection.coord, coord) ? removeSelection() : switchSelection();
+					}
+					return;
+				}
+			} else {
+				if (clickType === "left") {
+					if (piece.findUnit(piece.getSide(window.position), coord)) {
+						switchSelection();
 					}
 					return;
 				}

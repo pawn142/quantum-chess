@@ -20,7 +20,7 @@
 		"noImplicitOverride": true,
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
-		"noPropertyAccessFromIndexSignature": true,
+		"noPropertyAccessFromIndexSignature": false,
 		"noUncheckedIndexedAccess": true,
 		"noUncheckedSideEffectImports": true,
 		"noUnusedLocals": true,
@@ -29,6 +29,7 @@
 		"strict": true,
 		"rootDir": "src",
 		"outDir": "dist",
+		"types": ["node"],
 		"tsBuildInfoFile": "dist/buildinfo"
 	},
 	"include": [ "src/" ],
