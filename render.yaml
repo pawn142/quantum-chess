@@ -2,7 +2,7 @@ services:
   - type: web
     name: quantum-chess
     runtime: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm rebuild sqlite3 --build-from-source && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
