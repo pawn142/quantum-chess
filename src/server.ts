@@ -1,6 +1,9 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import websocket from "@fastify/websocket";
+import staticFiles from "@fastify/static";
+import path from "path";
+import { fileURLToPath } from "url";  
 
 import CryptoService from "./online/crypto.js";
 import AuthService from "./online/auth.js";
@@ -17,6 +20,14 @@ const app = Fastify({ logger: true });
 await app.register(cookie);
 await app.register(websocket);
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+await app.register(staticFiles, {
+	root: path.join(__dirname, "..", "public"),
+	prefix: "/",
+});
+
 const db = new SqliteDatabase();
 const crypto = new CryptoService();
 const auth = new AuthService(db, crypto);
@@ -27,7 +38,6 @@ const rooms = new RoomService(db);
 
 await registerRoutes(app, { auth, profile, matchmaking, rating, rooms });
 await registerGameWebSocketRoutes(app, auth, rooms);
-
 
 const port = Number(process.env.PORT ?? 3000);
 await app.listen({ port, host: "0.0.0.0" });
