@@ -28,7 +28,6 @@ const rooms = new RoomService(db);
 await registerRoutes(app, { auth, profile, matchmaking, rating, rooms });
 await registerGameWebSocketRoutes(app, auth, rooms);
 
-app.get("/", async() => ({ ok: true, name: "chess-backend-node" }));
 
 const port = Number(process.env.PORT ?? 3000);
 await app.listen({ port, host: "0.0.0.0" });
