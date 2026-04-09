@@ -18,8 +18,8 @@ await app.register(cookie);
 await app.register(websocket);
 
 const db = new SqliteDatabase("./data.sqlite");
-const cryptoService = new CryptoService();
-const auth = new AuthService(db, cryptoService);
+const crypto = new CryptoService();
+const auth = new AuthService(db, crypto);
 const profile = new ProfileService(db);
 const matchmaking = new MatchmakingService(db);
 const rating = new RatingService(db);

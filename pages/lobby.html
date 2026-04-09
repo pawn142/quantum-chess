@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Quantum Chess</title>
+		<script type="module" src="/src/scripts/main.ts"></script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 24px; max-width: 960px; }
+			form, section { margin-bottom: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+			label { display: block; margin-bottom: 8px; }
+			input, button { padding: 8px; margin-top: 4px; }
+			pre { background: #f6f6f6; padding: 12px; overflow: auto; }
+		</style>
+	</head>
+	<body>
+		<section>
+			<button id="me-button" type="button">Load current account</button>
+			<button id="create-room-button" type="button">Create room</button>
+			<button id="join-queue-button" type="button">Join queue</button>
+		</section>
+
+		<form id="signup-form">
+			<h2>Sign up</h2>
+			<label>Email <input name="email" type="email" required /></label>
+			<label>Password <input name="password" type="password" required /></label>
+			<label>Display name <input name="displayName" type="text" required /></label>
+			<button type="submit">Create account</button>
+		</form>
+
+		<form id="login-form">
+			<h2>Log in</h2>
+			<label>Email <input name="email" type="email" required /></label>
+			<label>Password <input name="password" type="password" required /></label>
+			<button type="submit">Log in</button>
+		</form>
+
+		<section>
+			<h2>Room actions</h2>
+			<label>Room ID <input id="room-id" type="text" /></label>
+			<label>Move <input id="move-input" type="text" placeholder="e2e4" /></label>
+			<button id="submit-move-button" type="button">Submit move</button>
+		</section>
+
+		<section>
+			<h2>Output</h2>
+			<pre id="output">Ready.</pre>
+		</section>
+	</body>
+</html>
