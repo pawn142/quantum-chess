@@ -10,7 +10,7 @@ export interface Database {
 export class SqliteDatabase implements Database {
 	private db: sqlite3.Database;
 
-	constructor(filename: string) {
+	constructor(filename: string = process.env.DATABASE_PATH ?? "./data.sqlite") {
 		this.db = new sqlite3.Database(filename);
 	}
 
