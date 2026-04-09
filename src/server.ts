@@ -1,8 +1,6 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import websocket from "@fastify/websocket";
-import fastifyStatic from "@fastify/static";
-import path from "node:path";
 
 import CryptoService from "./online/crypto.js";
 import AuthService from "./online/auth.js";
