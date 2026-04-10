@@ -28,7 +28,7 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"rootDir": "src",
-		"outDir": "./public/dist",
+		"outDir": "dist",
 		"types": ["node"],
 		"tsBuildInfoFile": "dist/buildinfo"
 	},
