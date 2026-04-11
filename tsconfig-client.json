@@ -27,10 +27,10 @@
 		"noUnusedParameters": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"rootDir": "client-src",
+		"rootDir": "client",
 		"outDir": "public/dist",
 		"types": ["node"],
 		"tsBuildInfoFile": "public/dist/buildinfo"
 	},
-	"include": [ "client-src/**/*" ],
+	"include": [ "client/**/*" ],
 }

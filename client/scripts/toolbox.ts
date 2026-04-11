@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { defaultData, Pieces, Sides } from "../../client-src/backend/piecetypes.js";
+import { defaultData, Pieces, Sides } from "../backend/piecetypes.js";
 
 export interface VisualSettings {
 	perspective: keyof typeof Sides;
