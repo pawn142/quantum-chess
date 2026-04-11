@@ -56,17 +56,18 @@ interface Services {
 export default async function registerRoutes(app: FastifyInstance, services: Services): Promise<void> {
 	app.post("/auth/signup", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.code(201).send(await start(req, reply, services, true));
+			return reply.code(201).send(await start(req, reply, services, false));
 		} catch (err: any) {
-			if (err.message?.includes("Email already in use")) return reply.code(409).send({ code: "EMAIL_IN_USE", message: err.message });
 			if (err.message?.includes("Invalid signup input")) return reply.code(400).send({ code: "INVALID_INPUT", message: err.message });
+			if (err.message?.includes("Email already in use")) return reply.code(409).send({ code: "EMAIL_IN_USE", message: err.message });
 			throw err;
 		}
 	});
 	app.post("/auth/login", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.send(await start(req, reply, services, false));
+			return reply.send(await start(req, reply, services, true));
 		} catch (err: any) {
+			if (err.message?.includes("Invalid login input")) return reply.code(400).send({ code: "INVALID_INPUT", message: err.message });
 			if (err.message?.includes("Invalid credentials")) return reply.code(401).send({ code: "INVALID_CREDENTIALS", message: "Invalid email or password" });
 			throw err;
 		}
@@ -92,12 +93,15 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 		try {
 			return reply.send({ profile: await services.profile.updateMyProfile((await requireAuth(req, services.auth)).user!.id, req.body as {username?: string; avatarUrl?: string | null}) });
 		} catch (err: any) {
-			if (err.statusCode) throw err;
-			return reply.code(400).send({ code: "BAD_REQUEST", message: err.message });
+			return handleErr(err, reply);
 		}
 	});
 	app.post("/rooms", async(req: FastifyRequest, reply: FastifyReply) => {
-		return reply.code(201).send(await services.rooms.createRoom({ variantId: (req.body as { variantId: string }).variantId, creatorId: (await requireAuth(req, services.auth)).user!.id }));
+		try {
+			return reply.code(201).send(await services.rooms.createRoom({ variantId: (req.body as { variantId: string }).variantId, creatorId: (await requireAuth(req, services.auth)).user!.id }));
+		} catch (err: any) {
+			return handleErr(err, reply);
+		}
 	});
 	app.get("/rooms/:id", async(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const state = await services.rooms.getState(req.params.id);
@@ -105,19 +109,35 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 		return state;
 	});
 	app.post("/rooms/:id/join", async(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		await services.rooms.joinRoom({ roomId: req.params.id, userId: (await requireAuth(req, services.auth)).user!.id, role: (req.body as { role: "player" | "spectator" }).role });
-		return reply.send({ ok: true });
+		try {
+			await services.rooms.joinRoom({ roomId: req.params.id, userId: (await requireAuth(req, services.auth)).user!.id, role: (req.body as { role: "player" | "spectator" }).role });
+			return reply.send({ ok: true });
+		} catch (err: any) {
+			return handleErr(err, reply);
+		}
 	});
 	app.post("/rooms/:id/move", async(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		await services.rooms.submitMove({ roomId: req.params.id, userId: (await requireAuth(req, services.auth)).user!.id, move: (req.body as { move: string }).move });
-		return reply.send({ ok: true });
+		try {
+			await services.rooms.submitMove({ roomId: req.params.id, userId: (await requireAuth(req, services.auth)).user!.id, move: (req.body as { move: string }).move });
+			return reply.send({ ok: true });
+		} catch (err: any) {
+			return handleErr(err, reply);
+		}
 	});
 	app.post("/queue/join", async(req: FastifyRequest, reply: FastifyReply) => {
-		return reply.send(await services.matchmaking.joinQueue({ userId: (await requireAuth(req, services.auth)).user!.id, variantId: (req.body as { variantId: string }).variantId }));
+		try {
+			return reply.send(await services.matchmaking.joinQueue({ userId: (await requireAuth(req, services.auth)).user!.id, variantId: (req.body as { variantId: string }).variantId }));
+		} catch (err: any) {
+			return handleErr(err, reply);
+		}
 	});
 	app.post("/queue/leave", async(req: FastifyRequest, reply: FastifyReply) => {
-		await services.matchmaking.leaveQueue({ userId: (await requireAuth(req, services.auth)).user!.id, variantId: (req.body as { variantId: string }).variantId });
-		return reply.send({ ok: true });
+		try {
+			await services.matchmaking.leaveQueue({ userId: (await requireAuth(req, services.auth)).user!.id, variantId: (req.body as { variantId: string }).variantId });
+			return reply.send({ ok: true });
+		} catch (err: any) {
+			return handleErr(err, reply);
+		}
 	});
 	app.get("/rooms/:id/events", async(req: FastifyRequest<{ Params: { id: string }; Querystring: { since?: string } }>, reply: FastifyReply) => {
 		const since = Number(req.query.since ?? "0");
@@ -125,8 +145,8 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 	});
 }
 
-async function start(req: FastifyRequest, reply: FastifyReply, services: Services, signUp: boolean): Promise<{ user: User; profile: UserProfile }> {
-	const result = await (signUp ? services.auth.signUp : services.auth.login)({
+async function start(req: FastifyRequest, reply: FastifyReply, services: Services, login: boolean): Promise<{ user: User; profile: UserProfile }> {
+	const result = await (login ? services.auth.login : services.auth.signUp)({
 		...req.body as { email: string; password: string; username: string },
 		ipAddress: req.ip,
 		userAgent: req.headers["user-agent"] ?? null
@@ -139,4 +159,9 @@ async function start(req: FastifyRequest, reply: FastifyReply, services: Service
 		maxAge: 2592000
 	});
 	return { user: result.user, profile: result.profile };
+}
+
+function handleErr(err: any, reply: FastifyReply): FastifyReply {
+	if (err.statusCode) throw err;
+	return reply.code(400).send({ code: "BAD_REQUEST", message: err.message });
 }

@@ -62,6 +62,7 @@ export class AuthService {
 		ipAddress?: string | null;
 		userAgent?: string | null;
 	}): Promise<{ user: User; profile: UserProfile; sessionToken: string }> {
+		assert(input.email && input.password.length >= 8, "Invalid login input");
 		const user = (await this.db.query<User>(
 			`SELECT id, email, password_hash AS passwordHash, is_active AS isActive,
 			        created_at AS createdAt, updated_at AS updatedAt
