@@ -28,7 +28,7 @@ export type AuthResult = {
 	user: {
 		id: string;
 		email: string;
-		status: string;
+		isActive: boolean;
 		createdAt: string;
 		updatedAt: string;
 	};

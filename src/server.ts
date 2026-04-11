@@ -6,16 +6,22 @@ import path from "path";
 import { fileURLToPath } from "url";  
 
 import CryptoService from "./online/crypto.js";
-import AuthService from "./online/auth.js";
+import { AuthService } from "./online/auth.js";
 import ProfileService from "./online/profile.js";
 import MatchmakingService from "./online/matchmaking.js";
 import RatingService from "./online/rating.js";
 import RoomService from "./online/room.js";
 import { SqliteDatabase } from "./online/database.js";
-import { registerRoutes } from "./online/routes.js";
+import registerRoutes from "./online/routes.js";
 import { registerGameWebSocketRoutes } from "./online/ws.js";
 
+import { runMigrations } from "./migrate.js";
+
 const app = Fastify({ logger: true });
+
+const db = new SqliteDatabase();
+
+await runMigrations(db);
 
 await app.register(cookie);
 await app.register(websocket);
@@ -28,7 +34,6 @@ await app.register(staticFiles, {
 	prefix: "/",
 });
 
-const db = new SqliteDatabase();
 const crypto = new CryptoService();
 const auth = new AuthService(db, crypto);
 const profile = new ProfileService(db);
@@ -38,6 +43,8 @@ const rooms = new RoomService(db);
 
 await registerRoutes(app, { auth, profile, matchmaking, rating, rooms });
 await registerGameWebSocketRoutes(app, auth, rooms);
+
+app.get("/", async() => ({ ok: true, name: "qc-backend-node" }));
 
 const port = Number(process.env.PORT ?? 3000);
 await app.listen({ port, host: "0.0.0.0" });

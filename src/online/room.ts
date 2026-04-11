@@ -1,6 +1,8 @@
 import type { Database } from "./database.js";
 import type { Room, RoomEvent } from "./usertypes.js";
 
+export type Events = Array<{ id: string; roomId: string; seq: number; eventType: RoomEvent["eventType"]; payload: unknown; createdAt: string; }>;
+
 export default class RoomService {
 	constructor(private db: Database) {}
 
@@ -34,7 +36,7 @@ export default class RoomService {
 		await this.appendEvent(input.roomId, "move", { userId: input.userId, move: input.move });
 	}
 
-	async getState(roomId: string): Promise<{ room: Room; events: Array<{ id: string; roomId: string; seq: number; eventType: RoomEvent["eventType"]; payload: unknown; createdAt: string; }> } | null> {
+	async getState(roomId: string): Promise<{ room: Room, events: Events } | null> {
 		const room = (await this.db.query<Room>(
 			`SELECT id, variant_id AS variantId, status,
 			        white_user_id AS whiteUserId, black_user_id AS blackUserId,
@@ -60,7 +62,7 @@ export default class RoomService {
 		}))};
 	}
 
-	async getEventsSince(roomId: string, sinceSeq: number): Promise<Array<{ id: string; roomId: string; seq: number; eventType: RoomEvent["eventType"]; payload: unknown; createdAt: string; }>> {
+	async getEventsSince(roomId: string, sinceSeq: number): Promise<Events> {
 		const rows = await this.db.query<{ id: string; roomId: string; seq: number; eventType: RoomEvent["eventType"]; payloadJson: string; createdAt: string }>(
 			`SELECT id, room_id AS roomId, seq, event_type AS eventType,
 			        payload_json AS payloadJson,
@@ -81,11 +83,9 @@ export default class RoomService {
 	private async appendEvent(roomId: string, eventType: RoomEvent["eventType"], payload: unknown): Promise<void> {
 		await this.db.execute(
 			`INSERT INTO room_events (id, room_id, seq, event_type, payload_json, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`,
-			[crypto.randomUUID(), roomId, ((await this.db.query<{ maxSeq: number | null }>(
-				`SELECT MAX(seq) AS maxSeq FROM room_events WHERE room_id = ?`,
-				[roomId]
-			))[0]?.maxSeq ?? 0) + 1, eventType, JSON.stringify(payload), new Date().toISOString()]
+			 SELECT ?, ?, COALESCE(MAX(seq), 0) + 1, ?, ?, ?
+			 FROM room_events WHERE room_id = ?`,
+			[crypto.randomUUID(), roomId, eventType, JSON.stringify(payload), new Date().toISOString(), roomId]
 		);
 	}
 }

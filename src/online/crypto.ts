@@ -1,18 +1,14 @@
-import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { createHash, randomBytes } from "crypto";
+import bcrypt from "bcrypt";
 
 export default class CryptoService {
 	async hashPassword(password: string): Promise<string> {
-		return createHash("sha256").update(password).digest("hex");
+		return bcrypt.hash(password, 10);
 	}
 
 	async verifyPassword(password: string, hash: string): Promise<boolean> {
-		const candidate = await this.hashPassword(password);
-		const a = Buffer.from(candidate, "hex");
-		const b = Buffer.from(hash, "hex");
-		if (a.length !== b.length) return false;
-		return timingSafeEqual(a, b);
+		return bcrypt.compare(password, hash);
 	}
-
 	generateToken(): string {
 		return randomBytes(32).toString("hex");
 	}

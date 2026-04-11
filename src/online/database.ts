@@ -13,6 +13,7 @@ export class SqliteDatabase implements Database {
 		this.db = new DatabaseSync(filename);
 		this.db.exec("PRAGMA foreign_keys = ON;");
 		this.db.exec("PRAGMA journal_mode = WAL;");
+		this.db.exec("PRAGMA busy_timeout = 5000;");
 	}
 
 	async query<T = unknown>(sql: string, params: SQLInputValue[] = []): Promise<T[]> {

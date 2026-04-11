@@ -2,7 +2,7 @@
 
 import { ApiClient } from "./api.js";
 
-const api = new ApiClient("http://localhost:3000");
+const api = new ApiClient("");
 
 const els = {
 	signupForm: document.querySelector<HTMLFormElement>("#signup-form"),
@@ -32,7 +32,7 @@ els.signupForm?.addEventListener("submit", async(event) => {
 		const result = await api.signup({
 			email: textInput(els.signupForm!, "email"),
 			password: textInput(els.signupForm!, "password"),
-			username: textInput(els.signupForm!, "displayName")
+			username: textInput(els.signupForm!, "username")
 		});
 		print({ action: "signup", result });
 	} catch (error) {

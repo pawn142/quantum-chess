@@ -34,8 +34,8 @@ export interface Room {
 	id: string;
 	variantId: string;
 	status: "open" | "active" | "finished";
-	whiteUserId: string;
-	blackUserId: string;
+	whiteUserId: string | null;
+	blackUserId: string | null;
 	createdAt: string;
 	updatedAt: string;
 }
