@@ -1,4 +1,4 @@
-import assert from "../public/assert.js";
+import assert from "../assert.js";
 import CryptoService from "./crypto.js";
 import { Database } from "./database.js";
 import { Session, User, UserProfile } from "./usertypes.js";

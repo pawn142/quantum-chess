@@ -24,7 +24,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 await app.register(staticFiles, {
-	root: path.join(__dirname, "..", "src/public"),
+	root: path.join(__dirname, "..", "public"),
 	prefix: "/",
 });
 

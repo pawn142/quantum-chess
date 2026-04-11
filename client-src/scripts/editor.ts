@@ -1,11 +1,11 @@
 // @ts-nocheck
 
-import Fraction from "../backend/arithmetic.js";
+import Fraction from "../../client-src/backend/arithmetic.js";
 
-import * as logic from "../backend/logic.js";
-import * as meta from "../backend/metatypes.js";
-import * as piece from "../backend/piecetypes.js";
-import * as random from "../backend/random.js";
+import * as logic from "../../client-src/backend/logic.js";
+import * as meta from "../../client-src/backend/metatypes.js";
+import * as piece from "../../client-src/backend/piecetypes.js";
+import * as random from "../../client-src/backend/random.js";
 
 import * as tools from "./toolbox.js";
 
