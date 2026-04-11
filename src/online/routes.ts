@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { User, UserProfile } from "./usertypes.js";
+import type { UserProfile } from "./usertypes.js";
 
 import { AuthService, AuthError } from "./auth.js";
 import type ProfileService from "./profile.js";
@@ -56,7 +56,13 @@ interface Services {
 export default async function registerRoutes(app: FastifyInstance, services: Services): Promise<void> {
 	app.post("/auth/signup", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.code(201).send(await start(req, reply, services, false));
+			const result = await services.auth.signUp({
+				...req.body as { email: string; password: string; username: string },
+				ipAddress: req.ip,
+				userAgent: req.headers["user-agent"] ?? null
+			});
+			setSessionCookie(reply, result.sessionToken);
+			return reply.code(201).send({ user: result.user, profile: result.profile });
 		} catch (err: any) {
 			if (err.message?.includes("Invalid signup input")) return reply.code(400).send({ code: "INVALID_INPUT", message: err.message });
 			if (err.message?.includes("Email already in use")) return reply.code(409).send({ code: "EMAIL_IN_USE", message: err.message });
@@ -65,7 +71,13 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 	});
 	app.post("/auth/login", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.send(await start(req, reply, services, true));
+			const result = await services.auth.login({
+				...req.body as { email: string; password: string },
+				ipAddress: req.ip,
+				userAgent: req.headers["user-agent"] ?? null
+			});
+			setSessionCookie(reply, result.sessionToken);
+			return reply.send({ user: result.user, profile: result.profile });
 		} catch (err: any) {
 			if (err.message?.includes("Invalid login input")) return reply.code(400).send({ code: "INVALID_INPUT", message: err.message });
 			if (err.message?.includes("Invalid credentials")) return reply.code(401).send({ code: "INVALID_CREDENTIALS", message: "Invalid email or password" });
@@ -145,20 +157,14 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 	});
 }
 
-async function start(req: FastifyRequest, reply: FastifyReply, services: Services, login: boolean): Promise<{ user: User; profile: UserProfile }> {
-	const result = await (login ? services.auth.login : services.auth.signUp)({
-		...req.body as { email: string; password: string; username: string },
-		ipAddress: req.ip,
-		userAgent: req.headers["user-agent"] ?? null
-	});
-	reply.setCookie("session", result.sessionToken, {
+function setSessionCookie(reply: FastifyReply, token: string): void {
+	reply.setCookie("session", token, {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
 		sameSite: "lax",
 		path: "/",
 		maxAge: 2592000
 	});
-	return { user: result.user, profile: result.profile };
 }
 
 function handleErr(err: any, reply: FastifyReply): FastifyReply {
