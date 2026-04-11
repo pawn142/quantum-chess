@@ -56,7 +56,7 @@ interface Services {
 export default async function registerRoutes(app: FastifyInstance, services: Services): Promise<void> {
 	app.post("/auth/signup", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.code(201).send(await signUp(req, reply, services));
+			return reply.code(201).send(await start(req, reply, services, true));
 		} catch (err: any) {
 			if (err.message?.includes("Email already in use")) return reply.code(409).send({ code: "EMAIL_IN_USE", message: err.message });
 			if (err.message?.includes("Invalid signup input")) return reply.code(400).send({ code: "INVALID_INPUT", message: err.message });
@@ -65,7 +65,7 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 	});
 	app.post("/auth/login", async(req: FastifyRequest, reply: FastifyReply) => {
 		try {
-			return reply.send(await signUp(req, reply, services));
+			return reply.send(await start(req, reply, services, false));
 		} catch (err: any) {
 			if (err.message?.includes("Invalid credentials")) return reply.code(401).send({ code: "INVALID_CREDENTIALS", message: "Invalid email or password" });
 			throw err;
@@ -125,8 +125,8 @@ export default async function registerRoutes(app: FastifyInstance, services: Ser
 	});
 }
 
-async function signUp(req: FastifyRequest, reply: FastifyReply, services: Services): Promise<{ user: User; profile: UserProfile }> {
-	const result = await services.auth.signUp({
+async function start(req: FastifyRequest, reply: FastifyReply, services: Services, signUp: boolean): Promise<{ user: User; profile: UserProfile }> {
+	const result = await (signUp ? services.auth.signUp : services.auth.login)({
 		...req.body as { email: string; password: string; username: string },
 		ipAddress: req.ip,
 		userAgent: req.headers["user-agent"] ?? null
