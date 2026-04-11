@@ -25,9 +25,8 @@ export class AuthService {
 		userAgent?: string | null;
 	}): Promise<{ user: User; profile: UserProfile; sessionToken: string }> {
 		return this.db.transaction(async(trx) => {
+			assert(input.email && input.username && input.password.length >= 8, "Invalid signup input");
 			const email = input.email.trim().toLowerCase();
-			const username = input.username.trim();
-			assert(email && username && input.password.length >= 8, "Invalid signup input");
 			assert(!(await this.db.query<{ id: string }>(
 				"SELECT id FROM users WHERE email = ? LIMIT 1",
 				[email]
@@ -43,7 +42,7 @@ export class AuthService {
 				`INSERT INTO user_profiles
 				 (user_id, username, avatar_url, rating, wins, losses, draws, created_at, updated_at)
 				 VALUES (?, ?, NULL, 1000, 0, 0, 0, ?, ?)`,
-				[userId, username, now, now]
+				[userId, input.username.trim(), now, now]
 			);
 			const { sessionToken } = await this.createSession({
 				userId,

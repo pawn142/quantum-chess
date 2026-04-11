@@ -8,7 +8,7 @@ export type SignupInput = Credentials & {
 };
 
 export type ProfileUpdateInput = {
-	displayName?: string;
+	username?: string;
 	avatarUrl?: string | null;
 };
 
@@ -34,7 +34,7 @@ export type AuthResult = {
 	};
 	profile: {
 		userId: string;
-		displayName: string;
+		username: string;
 		avatarUrl: string | null;
 		rating: number;
 		wins: number;
