@@ -2,7 +2,7 @@
 
 import { ApiClient } from "./api.js";
 
-const api = new ApiClient(import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000");
+const api = new ApiClient("http://localhost:3000");
 
 const els = {
 	signupForm: document.querySelector<HTMLFormElement>("#signup-form"),
